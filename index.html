@@ -1,0 +1,2701 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Playground | Developer Console</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f55036'><path d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/></svg>">
+  
+  <!-- Premium Fonts: Inter for UI & JetBrains Mono for Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            groq: {
+              orange: '#f55036',
+              amber: '#ff6f43',
+              dark: '#0a0a0c',
+              card: '#121316',
+              border: '#24262b',
+              surface: '#18191d',
+              hover: '#1e2025'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Marked.js for Markdown Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Highlight.js for Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <style>
+    /* Custom Scrollbars (Adaptive for Light & Dark) */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .dark ::-webkit-scrollbar-track {
+      background: #0d0e11;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #272a30;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: #393d45;
+    }
+
+    /* Range input custom styling with glowing thumb */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: #cbd5e1;
+      height: 6px;
+      border-radius: 9999px;
+      cursor: pointer;
+    }
+    .dark input[type=range] {
+      background: #24262b;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: #f55036;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(245, 80, 54, 0.5);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 14px rgba(245, 80, 54, 0.8);
+    }
+    input[type=range]:focus-visible {
+      outline: 2px solid #f55036;
+      outline-offset: 2px;
+    }
+
+    /* Pulse animation for streaming cursor */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .streaming-cursor {
+      display: inline-block;
+      width: 8px;
+      height: 18px;
+      background-color: #f55036;
+      margin-left: 3px;
+      vertical-align: text-bottom;
+      animation: blink 0.8s infinite;
+    }
+
+    /* Markdown prose code blocks */
+    .prose-custom pre {
+      background: #0f172a !important;
+      border: 1px solid #334155;
+      border-radius: 0.5rem;
+      padding: 0.875rem 1rem;
+      position: relative;
+      margin: 0.75rem 0;
+      overflow-x: auto;
+      color: #e2e8f0;
+    }
+    .dark .prose-custom pre {
+      background: #0a0b0e !important;
+      border: 1px solid #24262b;
+      color: #f1f5f9;
+    }
+    .prose-custom code {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.875rem;
+    }
+    .prose-custom :not(pre) > code {
+      background: #e2e8f0;
+      color: #c2410c;
+      padding: 0.15rem 0.4rem;
+      border-radius: 0.25rem;
+      font-size: 0.825rem;
+      border: 1px solid #cbd5e1;
+    }
+    .dark .prose-custom :not(pre) > code {
+      background: #1c1d22;
+      color: #ff9d80;
+      border: 1px solid #2e3038;
+    }
+    .prose-custom p {
+      margin-bottom: 0.75rem;
+      line-height: 1.65;
+    }
+    .prose-custom ul, .prose-custom ol {
+      padding-left: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .prose-custom li {
+      margin-bottom: 0.35rem;
+    }
+    .prose-custom blockquote {
+      border-left: 3px solid #f55036;
+      padding-left: 1rem;
+      margin: 0.75rem 0;
+      color: #64748b;
+      font-style: italic;
+    }
+    .dark .prose-custom blockquote {
+      color: #9ca3af;
+    }
+    .prose-custom table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.875rem;
+    }
+    .prose-custom th, .prose-custom td {
+      border: 1px solid #e2e8f0;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    .dark .prose-custom th, .dark .prose-custom td {
+      border: 1px solid #272a31;
+    }
+    .prose-custom th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .dark .prose-custom th {
+      background: #15161a;
+      color: #f1f5f9;
+    }
+
+    /* Accessibility: Respect Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 dark:bg-groq-dark text-slate-800 dark:text-zinc-100 font-sans antialiased h-full flex flex-col selection:bg-orange-500/30 selection:text-orange-900 dark:selection:text-orange-200 transition-colors duration-200">
+
+  <!-- Top Navigation Bar -->
+  <header class="h-14 border-b border-slate-200 dark:border-groq-border bg-white/90 dark:bg-[#0d0e11]/90 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-30 sticky top-0 transition-colors duration-200">
+    <div class="flex items-center space-x-3">
+      <!-- LLM Playground Logo -->
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-md shadow-orange-500/20 ring-1 ring-orange-400/40">
+        <svg class="w-5 h-5 text-white fill-current" viewBox="0 0 24 24">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold tracking-tight text-slate-900 dark:text-white text-base">LLM</span>
+          <span class="text-xs uppercase tracking-widest font-mono font-semibold text-orange-600 dark:text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/30">PLAYGROUND</span>
+        </div>
+      </div>
+      
+      <!-- Current Model Pill -->
+      <div class="hidden sm:flex items-center gap-1.5 ml-3 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs font-mono text-slate-700 dark:text-zinc-300">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="navModelDisplay" class="font-medium">llama-3.1-8b-instant</span>
+      </div>
+    </div>
+
+    <!-- Right Header Actions -->
+    <div class="flex items-center space-x-2">
+
+      <!-- THEME TOGGLE (DARK / LIGHT MODE) -->
+      <button
+        id="themeToggleBtn"
+        type="button"
+        title="Toggle Dark / Light Mode"
+        class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800 text-xs font-medium transition active:scale-[0.98] shadow-sm"
+      >
+        <!-- Sun Icon -->
+        <svg id="themeIconSun" class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        <!-- Moon Icon -->
+        <svg id="themeIconMoon" class="w-4 h-4 text-indigo-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+        <span id="themeLabel" class="hidden sm:inline font-mono">Theme</span>
+      </button>
+
+      <!-- Demo Mode Toggle -->
+      <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-xs shadow-sm">
+        <span class="text-slate-600 dark:text-zinc-400 font-medium">Demo</span>
+        <button id="demoModeToggle" type="button" role="switch" aria-checked="false" class="cursor-pointer w-8 h-4 rounded-full bg-slate-300 dark:bg-zinc-700 relative transition-colors focus:outline-none">
+          <span id="demoModeThumb" class="w-3 h-3 rounded-full bg-white absolute top-0.5 left-0.5 transition-transform shadow"></span>
+        </button>
+      </div>
+
+      <!-- View Raw Request / cURL Button -->
+      <button id="viewPayloadBtn" class="cursor-pointer flex items-center gap-1.5 text-xs text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 transition active:scale-[0.98] shadow-sm">
+        <svg class="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        </svg>
+        <span class="hidden md:inline font-medium">Inspect</span> <span class="font-mono">cURL/JSON</span>
+      </button>
+
+      <!-- Reset Canvas Button -->
+      <button id="resetSessionBtn" title="Reset LLM Playground" class="cursor-pointer p-1.5 text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-lg transition border border-transparent hover:border-slate-300 dark:hover:border-zinc-700 active:scale-[0.98]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
+
+      <!-- Sidebar Toggle (Mobile only) -->
+      <button id="sidebarToggleBtn" class="cursor-pointer lg:hidden p-1.5 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-lg border border-slate-200 dark:border-zinc-800 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace Layout (Two-Column Flex) -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- LEFT / CENTER: Main Prompting & Prompt Engineering Interface -->
+    <main class="flex-1 flex flex-col overflow-y-auto bg-slate-100 dark:bg-groq-dark p-4 md:p-6 space-y-5 transition-colors duration-200">
+      
+      <!-- Top Demo Banner (shows when Demo Mode is ON) -->
+      <div id="demoModeBanner" class="hidden items-center justify-between px-4 py-2.5 rounded-xl bg-orange-100 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-500/30 text-orange-900 dark:text-orange-200 text-xs shadow-sm">
+        <div class="flex items-center gap-2">
+          <span class="flex h-2 w-2 rounded-full bg-orange-500 animate-ping"></span>
+          <span><strong>Demo Mode Active:</strong> High-speed simulated streaming enabled (~400 tok/s). No API key needed to test prompting and response streaming.</span>
+        </div>
+        <button id="exitDemoBtn" class="cursor-pointer text-orange-700 dark:text-orange-300 hover:underline font-semibold">Turn Off</button>
+      </div>
+
+      <!-- 1. SYSTEM PROMPT SECTION -->
+      <section class="bg-white dark:bg-groq-card rounded-xl border border-slate-200 dark:border-groq-border p-4 shadow-sm transition-all focus-within:border-orange-400 dark:focus-within:border-zinc-700">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-slate-400 dark:bg-zinc-500"></span>
+            <label for="systemPrompt" class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-400">System Prompt</label>
+            <span id="systemTokenBadge" class="text-[11px] font-mono text-slate-600 dark:text-zinc-500 bg-slate-100 dark:bg-zinc-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-800">~0 tokens</span>
+          </div>
+
+          <!-- System Presets Dropdown -->
+          <div class="flex items-center gap-2">
+            <label class="text-[11px] text-slate-500 dark:text-zinc-400 hidden sm:inline font-medium">Preset:</label>
+            <select id="systemPresetSelect" class="cursor-pointer bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 text-xs text-slate-800 dark:text-zinc-300 rounded px-2 py-1 outline-none focus:border-orange-500 transition">
+              <option value="default">Helpful Assistant</option>
+              <option value="code_expert">Senior Software Architect</option>
+              <option value="json_extractor">Strict JSON Extractor</option>
+              <option value="concise">Ultra-Concise Analyst</option>
+              <option value="cot">Chain-of-Thought Reasoner</option>
+              <option value="custom">Custom Persona</option>
+            </select>
+            <button id="clearSystemPrompt" title="Clear System Prompt" class="cursor-pointer text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-300 p-1 rounded transition text-xs font-medium">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <textarea
+          id="systemPrompt"
+          rows="2"
+          data-min-height="58"
+          placeholder="You are a helpful, brilliant, and precise AI assistant. Answer queries factually and concisely..."
+          class="w-full bg-slate-50 dark:bg-zinc-900/60 border border-slate-300 dark:border-zinc-800/80 rounded-lg p-3 text-sm font-mono text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 dark:focus:ring-orange-500/60 dark:focus:border-orange-500/60 transition resize-none overflow-hidden min-h-[58px]"
+        >You are a helpful, brilliant, and precise AI assistant. Answer queries factually and concisely.</textarea>
+      </section>
+
+      <!-- 2. PROMPT ENGINEERING & SHOT BUILDER (HIGH VISIBILITY REDESIGN) -->
+      <section class="bg-white dark:bg-gradient-to-br dark:from-groq-card dark:via-groq-card dark:to-zinc-900/90 rounded-xl border-2 border-orange-500/40 dark:border-orange-500/30 p-4 sm:p-5 shadow-md relative overflow-hidden transition-all">
+        
+        <!-- Top Colored Vibrant Accent Line for Prompt Engineering -->
+        <div class="h-1 w-full bg-gradient-to-r from-orange-500 via-amber-500 to-indigo-500 absolute top-0 left-0 right-0"></div>
+
+        <!-- Header Row with Distinct Titles -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 border border-orange-500/30 text-orange-600 dark:text-orange-400 shadow-sm">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">PROMPT ENGINEERING</h2>
+                <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-800/80">Structure &amp; Shot Builder</span>
+              </div>
+              <p class="text-xs text-slate-600 dark:text-zinc-400 mt-0.5 font-medium">Inspect zero / one / few-shot patterns and inject structured demonstrations</p>
+            </div>
+          </div>
+
+          <!-- Current Shot Classification Badge -->
+          <div class="flex items-center gap-2">
+            <div id="shotBadge" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 transition-all shadow-sm">
+              <span id="shotBadgeDot" class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+              <span id="shotBadgeText">Zero-Shot</span>
+            </div>
+            <span id="shotCountText" class="text-xs font-mono font-medium text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-900 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-sm">0 Examples</span>
+          </div>
+        </div>
+
+        <!-- HIGH-VISIBILITY PROMPT ENGINEER DIVIDER LINE -->
+        <div class="h-0.5 w-full bg-gradient-to-r from-orange-500 via-amber-400 to-transparent my-3 opacity-90"></div>
+
+        <!-- Analyzer Action Bar & Example Injector -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- Analyze Prompt Button -->
+            <button id="analyzePromptBtn" class="cursor-pointer flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-xs font-semibold text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700 transition shadow-sm active:scale-[0.98]">
+              <svg class="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              <span>Analyze Prompt</span>
+            </button>
+
+            <!-- Inject Example Dropdown Button -->
+            <div class="relative inline-block text-left" id="injectDropdownWrapper">
+              <button id="injectExampleBtn" type="button" class="cursor-pointer flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-xs font-semibold text-orange-700 dark:text-orange-300 border border-orange-500/40 transition active:scale-[0.98] shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                <span>Inject Example</span>
+                <svg class="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+
+              <!-- Inject Menu Popover -->
+              <div id="injectMenu" class="hidden absolute left-0 mt-2 w-72 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-2xl z-40 p-1.5 space-y-1">
+                <div class="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
+                  Select Few-Shot Template
+                </div>
+                <button data-template="oneshot-simple" class="cursor-pointer inject-option w-full text-left px-2.5 py-2 rounded-lg text-xs hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 transition flex items-start gap-2">
+                  <div class="p-1 rounded bg-orange-500/10 text-orange-500 shrink-0 mt-0.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </div>
+                  <div>
+                    <div class="font-semibold">One-Shot (General Input / Output)</div>
+                    <div class="text-[11px] text-slate-500 dark:text-zinc-400">Single canonical demonstration pair</div>
+                  </div>
+                </button>
+                <button data-template="fewshot-classification" class="cursor-pointer inject-option w-full text-left px-2.5 py-2 rounded-lg text-xs hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 transition flex items-start gap-2">
+                  <div class="p-1 rounded bg-amber-500/10 text-amber-500 shrink-0 mt-0.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                  </div>
+                  <div>
+                    <div class="font-semibold">Few-Shot Classification</div>
+                    <div class="text-[11px] text-slate-500 dark:text-zinc-400">3 labeled sentiment &amp; category examples</div>
+                  </div>
+                </button>
+                <button data-template="fewshot-json" class="cursor-pointer inject-option w-full text-left px-2.5 py-2 rounded-lg text-xs hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 transition flex items-start gap-2">
+                  <div class="p-1 rounded bg-emerald-500/10 text-emerald-500 shrink-0 mt-0.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                  </div>
+                  <div>
+                    <div class="font-semibold">Few-Shot JSON Extraction</div>
+                    <div class="text-[11px] text-slate-500 dark:text-zinc-400">2 structured entity extraction examples</div>
+                  </div>
+                </button>
+                <button data-template="fewshot-code" class="cursor-pointer inject-option w-full text-left px-2.5 py-2 rounded-lg text-xs hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 transition flex items-start gap-2">
+                  <div class="p-1 rounded bg-cyan-500/10 text-cyan-500 shrink-0 mt-0.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  </div>
+                  <div>
+                    <div class="font-semibold">Few-Shot Code &amp; SQL</div>
+                    <div class="text-[11px] text-slate-500 dark:text-zinc-400">2 Natural Language to SQL examples</div>
+                  </div>
+                </button>
+                <button data-template="blank-example" class="cursor-pointer inject-option w-full text-left px-2.5 py-2 rounded-lg text-xs hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 transition flex items-start gap-2 border-t border-slate-200 dark:border-zinc-800/80 pt-2">
+                  <div class="p-1 rounded bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-zinc-300 shrink-0 mt-0.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  </div>
+                  <div>
+                    <div class="font-semibold">Blank Custom Example</div>
+                    <div class="text-[11px] text-slate-500 dark:text-zinc-400">Inserts empty <code>### Example \nInput: \nOutput:</code></div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Auto-analyze toggle -->
+            <label class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-400 cursor-pointer ml-1 select-none font-medium">
+              <input type="checkbox" id="autoAnalyzeCheckbox" checked class="w-3.5 h-3.5 rounded bg-slate-100 dark:bg-zinc-800 border-slate-300 dark:border-zinc-700 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer">
+              <span>Auto-detect</span>
+            </label>
+          </div>
+
+          <!-- Detailed Inspection Toggle -->
+          <button id="toggleAnalysisDetailsBtn" class="cursor-pointer text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-1 transition">
+            <span id="detailsToggleLabel">Show Analysis Details</span>
+            <svg id="detailsChevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Collapsible Analysis Insights Panel -->
+        <div id="analysisDetailsPanel" class="hidden mt-3 pt-3 border-t border-slate-200 dark:border-zinc-800/80 text-xs space-y-2">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div class="bg-slate-50 dark:bg-zinc-900/80 p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-sm">
+              <div class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-zinc-500 font-mono font-semibold">Structural Match</div>
+              <div id="metricPatterns" class="text-slate-800 dark:text-zinc-200 font-mono font-medium mt-0.5">Scanning...</div>
+            </div>
+            <div class="bg-slate-50 dark:bg-zinc-900/80 p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-sm">
+              <div class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-zinc-500 font-mono font-semibold">Clarity &amp; Consistency</div>
+              <div id="metricConsistency" class="text-slate-800 dark:text-zinc-200 font-mono font-medium mt-0.5">High</div>
+            </div>
+            <div class="bg-slate-50 dark:bg-zinc-900/80 p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-sm">
+              <div class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-zinc-500 font-mono font-semibold">Token Ratio</div>
+              <div id="metricRatio" class="text-slate-800 dark:text-zinc-200 font-mono font-medium mt-0.5">0% Examples</div>
+            </div>
+          </div>
+          <div id="analysisFeedback" class="p-2.5 rounded-lg bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/60 text-slate-700 dark:text-zinc-300 text-xs leading-relaxed flex items-start gap-2">
+            <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            <span id="analysisFeedbackText">No examples detected. Prompt operates in Zero-Shot mode. Add demonstrations via "Inject Example" to enforce strict output formats.</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 3. USER PROMPT AREA -->
+      <section class="bg-white dark:bg-groq-card rounded-xl border border-slate-200 dark:border-groq-border p-4 shadow-sm transition-all focus-within:border-orange-400 dark:focus-within:border-zinc-700 flex flex-col">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+            <label for="userPrompt" class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-400">User Prompt</label>
+            <span id="userTokenBadge" class="text-[11px] font-mono text-slate-600 dark:text-zinc-500 bg-slate-100 dark:bg-zinc-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-800">~0 tokens</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Sample Prompts -->
+            <div class="hidden md:flex items-center gap-1.5 text-xs">
+              <span class="text-slate-500 dark:text-zinc-500 text-[11px] font-medium">Quick Samples:</span>
+              <button data-sample="sentiment" class="cursor-pointer sample-prompt-btn text-[11px] bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-800 transition font-medium active:scale-[0.98]">
+                Sentiment Task
+              </button>
+              <button data-sample="code" class="cursor-pointer sample-prompt-btn text-[11px] bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-800 transition font-medium active:scale-[0.98]">
+                Rust HTTP Server
+              </button>
+              <button data-sample="json" class="cursor-pointer sample-prompt-btn text-[11px] bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-800 transition font-medium active:scale-[0.98]">
+                JSON Extraction
+              </button>
+            </div>
+
+            <button id="clearUserPrompt" title="Clear User Prompt" class="cursor-pointer text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-300 p-1 rounded transition text-xs font-medium">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <textarea
+          id="userPrompt"
+          rows="6"
+          data-min-height="140"
+          placeholder="Type your prompt here... (Press ⌘+Enter or Ctrl+Enter to submit)"
+          class="w-full bg-slate-50 dark:bg-zinc-900/60 border border-slate-300 dark:border-zinc-800/80 rounded-lg p-3 text-sm font-mono text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 dark:focus:ring-orange-500/60 dark:focus:border-orange-500/60 transition resize-none overflow-hidden min-h-[140px]"
+        >Classify the sentiment of the following customer feedback:
+"The latency on Groq is absolutely insane! Responses stream before my fingers leave the keyboard."</textarea>
+
+        <!-- Prompt Footer with Actions & Submit -->
+        <div class="flex items-center justify-between mt-3 pt-2 border-t border-slate-200 dark:border-zinc-800/60">
+          <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-500 font-mono">
+            <span class="hidden sm:inline">Shortcut: <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded text-slate-700 dark:text-zinc-400 font-semibold">⌘+Enter</kbd></span>
+            <span id="groundingActiveIndicator" class="hidden items-center gap-1 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[11px] font-semibold">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+              <span>Web Search Tool Attached</span>
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Stop button (visible only while generating) -->
+            <button id="stopBtn" class="cursor-pointer hidden items-center gap-1.5 px-3.5 py-2 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-600 dark:text-red-400 border border-red-500/30 text-xs font-semibold transition active:scale-[0.98]">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+              <span>Stop</span>
+            </button>
+
+            <!-- Submit Button -->
+            <button
+              id="submitBtn"
+              class="cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-semibold text-xs tracking-wide shadow-md shadow-orange-500/20 hover:shadow-orange-500/40 transition-all active:scale-[0.98]"
+            >
+              <svg id="submitIcon" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              <svg id="submitSpinner" class="hidden w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span id="submitBtnText">Run Prompt</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. RESPONSE AREA -->
+      <section class="bg-white dark:bg-groq-card rounded-xl border border-slate-200 dark:border-groq-border p-4 shadow-sm flex flex-col flex-1 min-h-[280px]">
+        
+        <!-- Response Header Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-200 dark:border-zinc-800">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-300">Response Area</h3>
+            <span id="statusIndicator" class="text-[11px] font-mono text-slate-600 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-900 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-800">
+              Idle
+            </span>
+          </div>
+
+          <!-- Speed & Token Stats -->
+          <div id="statsBar" class="flex items-center gap-3 text-xs font-mono text-slate-600 dark:text-zinc-400">
+            <div class="hidden sm:flex items-center gap-1">
+              <span class="text-slate-400 dark:text-zinc-500">Latency:</span>
+              <span id="latencyStat" class="text-slate-800 dark:text-zinc-200 font-semibold">-- ms</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-slate-400 dark:text-zinc-500">Speed:</span>
+              <span id="speedStat" class="text-orange-600 dark:text-orange-400 font-semibold">-- tok/s</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-slate-400 dark:text-zinc-500">Tokens:</span>
+              <span id="tokenStat" class="text-slate-800 dark:text-zinc-200 font-semibold">--</span>
+            </div>
+          </div>
+
+          <!-- Actions: Copy Markdown / Raw JSON toggle -->
+          <div class="flex items-center gap-1.5">
+            <div class="bg-slate-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-slate-200 dark:border-zinc-800 flex items-center text-xs">
+              <button id="viewRenderedTab" class="cursor-pointer px-2 py-1 rounded bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-200 font-semibold shadow-sm transition">Rendered</button>
+              <button id="viewRawTab" class="cursor-pointer px-2 py-1 rounded text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 transition">Raw JSON</button>
+            </div>
+            <button id="copyResponseBtn" title="Copy response to clipboard" class="cursor-pointer p-1.5 text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg border border-slate-200 dark:border-zinc-800 transition active:scale-[0.98]">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Response Body Container -->
+        <div id="responseContainer" class="flex-1 relative min-h-[160px] overflow-y-auto">
+          
+          <!-- Idle Placeholder -->
+          <div id="responseEmptyState" class="h-full flex flex-col items-center justify-center text-center p-8 text-slate-500 dark:text-zinc-600">
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex items-center justify-center mb-3 text-slate-400 dark:text-zinc-500 shadow-sm">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+            </div>
+            <p class="text-sm font-semibold text-slate-700 dark:text-zinc-400">Ready to execute in LLM Playground</p>
+            <p class="text-xs text-slate-500 dark:text-zinc-500 mt-1 max-w-sm">Enter your system and user prompt, adjust the sliders on the right, and click "Run Prompt" or press ⌘+Enter.</p>
+          </div>
+
+          <!-- Loading Skeleton State -->
+          <div id="responseLoadingState" class="hidden space-y-3 py-3">
+            <div class="flex items-center gap-2 text-xs font-mono text-orange-600 dark:text-orange-400 animate-pulse font-semibold">
+              <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span>Executing prompt... (<span id="elapsedCounter">0.00s</span>)</span>
+            </div>
+            <div class="h-4 bg-slate-200 dark:bg-zinc-800/80 rounded w-5/6 animate-pulse"></div>
+            <div class="h-4 bg-slate-200 dark:bg-zinc-800/60 rounded w-4/6 animate-pulse"></div>
+            <div class="h-4 bg-slate-200 dark:bg-zinc-800/40 rounded w-full animate-pulse"></div>
+            <div class="h-4 bg-slate-200 dark:bg-zinc-800/30 rounded w-3/4 animate-pulse"></div>
+          </div>
+
+          <!-- Error Alert State with Diagnostic Actions -->
+          <div id="responseErrorState" class="hidden p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-500/40 text-red-900 dark:text-red-200 text-xs space-y-2">
+            <div class="flex items-center gap-2 font-semibold text-red-600 dark:text-red-400">
+              <svg class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+              <span id="errorTitle">API Error Encountered</span>
+            </div>
+            <div id="errorMessage" class="font-mono text-[11px] bg-red-100 dark:bg-red-950/80 p-2.5 rounded border border-red-200 dark:border-red-900/60 break-words whitespace-pre-wrap"></div>
+            <div id="errorRemedy" class="text-slate-600 dark:text-zinc-400 text-[11px] pt-1"></div>
+          </div>
+
+          <!-- Formatted Rendered Markdown Output -->
+          <div id="responseContent" class="hidden prose-custom text-slate-800 dark:text-zinc-200 text-sm leading-relaxed"></div>
+
+          <!-- Raw JSON View -->
+          <pre id="responseRawJson" class="hidden bg-slate-950 text-slate-100 dark:bg-[#08090b] p-3 rounded-lg border border-slate-800 text-xs font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- RIGHT: CONFIGURATION SIDEBAR -->
+    <aside id="configSidebar" class="w-80 md:w-96 bg-white dark:bg-groq-surface border-l border-slate-200 dark:border-groq-border flex flex-col shrink-0 overflow-y-auto transition-all fixed inset-y-0 right-0 z-40 lg:static lg:translate-x-0 translate-x-full shadow-2xl lg:shadow-none">
+      
+      <!-- Sidebar Header -->
+      <div class="h-14 border-b border-slate-200 dark:border-groq-border px-5 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">LLM Settings</span>
+        </div>
+        <button id="closeSidebarBtn" class="cursor-pointer lg:hidden text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-6">
+
+        <!-- 0. PROVIDER SELECTION -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label for="providerSelect" class="text-xs font-semibold text-slate-800 dark:text-zinc-300">API Provider</label>
+            <span id="providerBadge" class="text-[10px] font-mono text-orange-600 dark:text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/30 font-semibold">Groq</span>
+          </div>
+          <select
+            id="providerSelect"
+            class="cursor-pointer w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-orange-500 transition"
+          >
+            <option value="groq" selected>Groq (Ultra-Fast LPUs)</option>
+            <option value="xai">xAI / Grok (api.x.ai)</option>
+            <option value="openai">OpenAI (Official GPT-4o)</option>
+            <option value="openrouter">OpenRouter (All Providers)</option>
+            <option value="custom">Custom Endpoint</option>
+          </select>
+        </div>
+
+        <!-- 1. API KEY CONFIGURATION -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="apiKeyInput" class="text-xs font-semibold text-slate-800 dark:text-zinc-300 flex items-center gap-1.5">
+              <span>API Key</span>
+              <span id="keyStatusDot" class="w-2 h-2 rounded-full bg-amber-500" title="API key required"></span>
+            </label>
+            <a id="getKeyLink" href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="text-[11px] text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-0.5 font-medium">
+              <span>Get Key</span>
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
+          </div>
+
+          <div class="relative">
+            <input
+              id="apiKeyInput"
+              type="password"
+              placeholder="gsk_..."
+              autocomplete="off"
+              class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 rounded-lg pl-3 pr-10 py-2 text-xs font-mono text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition"
+            />
+            <button id="toggleKeyVisibility" type="button" class="cursor-pointer absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-300 p-1">
+              <svg id="eyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Key Format Hint Box -->
+          <div id="keyFormatHint" class="hidden text-[11px] p-2 rounded-lg font-medium transition-all"></div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-500 pt-0.5">
+            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+              <input type="checkbox" id="saveKeyCheckbox" class="cursor-pointer w-3 h-3 rounded bg-slate-100 dark:bg-zinc-800 border-slate-300 dark:border-zinc-700 text-orange-500 focus:ring-0">
+              <span>Save to browser storage</span>
+            </label>
+            <button id="clearKeyBtn" class="cursor-pointer hover:text-red-500 transition font-medium">Clear</button>
+          </div>
+          <p class="text-[10px] text-slate-500 dark:text-zinc-500 italic">No keys are stored on servers or hardcoded. Safe for Vercel deployment.</p>
+        </div>
+
+        <!-- 2. MODEL SELECTION -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="modelSelect" class="text-xs font-semibold text-slate-800 dark:text-zinc-300">Model</label>
+            <div class="flex items-center gap-2">
+              <button id="fetchModelsBtn" type="button" title="Sync models available for your API key" class="cursor-pointer text-[10px] text-orange-600 dark:text-orange-400 hover:underline font-semibold flex items-center gap-1 active:scale-[0.98]">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Sync Models</span>
+              </button>
+              <span id="modelContextTag" class="text-[10px] font-mono text-slate-600 dark:text-zinc-500 bg-slate-100 dark:bg-zinc-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-800 font-medium">128k context</span>
+            </div>
+          </div>
+          <select
+            id="modelSelect"
+            class="cursor-pointer w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 dark:text-zinc-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition"
+          >
+            <option value="llama-3.1-8b-instant" selected>llama-3.1-8b-instant (Fastest ~750 T/s - All Tiers)</option>
+            <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (70B Tier Required)</option>
+            <option value="deepseek-r1-distill-llama-70b">deepseek-r1-distill-llama-70b (Reasoning)</option>
+            <option value="llama-3.2-11b-vision-preview">llama-3.2-11b-vision-preview (Vision)</option>
+            <option value="llama-3.2-3b-preview">llama-3.2-3b-preview (Compact)</option>
+            <option value="llama3-8b-8192">llama3-8b-8192 (Legacy Llama 3)</option>
+            <option value="mixtral-8x7b-32768">mixtral-8x7b-32768 (MoE 32k)</option>
+            <option value="gemma2-9b-it">gemma2-9b-it (Google Gemma 2)</option>
+            <option value="custom">Custom Model ID...</option>
+          </select>
+
+          <!-- Custom Model ID input if selected -->
+          <div id="customModelContainer" class="hidden pt-1">
+            <input
+              id="customModelInput"
+              type="text"
+              placeholder="e.g. meta-llama/Llama-3-8b"
+              class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-zinc-200 focus:outline-none focus:border-orange-500"
+            />
+          </div>
+        </div>
+
+        <!-- 3. TEMPERATURE SLIDER -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <label for="tempSlider" class="text-xs font-semibold text-slate-800 dark:text-zinc-300">Temperature</label>
+              <span title="Controls randomness: 0.0 is deterministic, 2.0 is highly creative" class="text-slate-400 dark:text-zinc-500 cursor-help">
+                <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </span>
+            </div>
+            <span id="tempValueDisplay" class="text-xs font-mono text-orange-600 dark:text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20 font-bold">0.70</span>
+          </div>
+          <input
+            id="tempSlider"
+            type="range"
+            min="0.0"
+            max="2.0"
+            step="0.01"
+            value="0.70"
+            class="w-full"
+          />
+          <div class="flex justify-between text-[10px] text-slate-500 dark:text-zinc-500 font-mono font-medium">
+            <span>0.0 (Deterministic)</span>
+            <span>1.0</span>
+            <span>2.0 (Creative)</span>
+          </div>
+        </div>
+
+        <!-- 4. MAX TOKENS SLIDER -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <label for="maxTokensSlider" class="text-xs font-semibold text-slate-800 dark:text-zinc-300">Max Tokens</label>
+              <span title="The maximum number of tokens to generate in the completion" class="text-slate-400 dark:text-zinc-500 cursor-help">
+                <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </span>
+            </div>
+            <span id="maxTokensValueDisplay" class="text-xs font-mono text-orange-600 dark:text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20 font-bold">4096</span>
+          </div>
+          <input
+            id="maxTokensSlider"
+            type="range"
+            min="1"
+            max="8192"
+            step="1"
+            value="4096"
+            class="w-full"
+          />
+          <div class="flex justify-between text-[10px] text-slate-500 dark:text-zinc-500 font-mono">
+            <button class="cursor-pointer max-token-preset hover:text-orange-600 dark:hover:text-zinc-300 font-medium active:scale-[0.98]" data-val="1024">1024</button>
+            <button class="cursor-pointer max-token-preset hover:text-orange-600 dark:hover:text-zinc-300 font-medium active:scale-[0.98]" data-val="2048">2048</button>
+            <button class="cursor-pointer max-token-preset hover:text-orange-600 dark:hover:text-zinc-300 font-medium active:scale-[0.98]" data-val="4096">4096</button>
+            <button class="cursor-pointer max-token-preset hover:text-orange-600 dark:hover:text-zinc-300 font-medium active:scale-[0.98]" data-val="8192">8192</button>
+          </div>
+        </div>
+
+        <!-- 5. WEB SEARCH GROUNDING TOGGLE -->
+        <div class="bg-slate-50 dark:bg-zinc-900/90 rounded-xl p-3.5 border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs font-semibold text-slate-800 dark:text-zinc-200">Web Search Grounding</div>
+                <div class="text-[10px] text-slate-500 dark:text-zinc-400">Attach real-time web search tool</div>
+              </div>
+            </div>
+
+            <!-- Toggle Switch UI -->
+            <button
+              id="webSearchToggle"
+              type="button"
+              role="switch"
+              aria-checked="false"
+              class="cursor-pointer w-10 h-5 rounded-full bg-slate-300 dark:bg-zinc-700 relative transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            >
+              <span id="webSearchThumb" class="w-4 h-4 rounded-full bg-white absolute top-0.5 left-0.5 transition-transform shadow"></span>
+            </button>
+          </div>
+
+          <!-- Tool Payload Detail Preview when active -->
+          <div id="webSearchNotice" class="hidden text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded border border-emerald-200 dark:border-emerald-500/20 leading-relaxed font-mono">
+            tools: [{ "type": "function", "function": { "name": "web_search" } }]
+          </div>
+        </div>
+
+        <!-- 6. ADVANCED: STREAMING & TOP-P -->
+        <div class="space-y-4 pt-2 border-t border-slate-200 dark:border-zinc-800/80">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-800 dark:text-zinc-300">Stream Output</span>
+            <button
+              id="streamToggle"
+              type="button"
+              role="switch"
+              aria-checked="true"
+              class="cursor-pointer w-8 h-4 rounded-full bg-orange-600 relative transition-colors focus:outline-none"
+            >
+              <span id="streamThumb" class="w-3 h-3 rounded-full bg-white absolute top-0.5 right-0.5 transition-transform shadow"></span>
+            </button>
+          </div>
+
+          <!-- Top-P Slider -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-600 dark:text-zinc-400 font-medium">Top P</span>
+              <span id="topPDisplay" class="font-mono text-slate-800 dark:text-zinc-300 font-semibold">1.00</span>
+            </div>
+            <input id="topPSlider" type="range" min="0.0" max="1.0" step="0.01" value="1.00" class="w-full" />
+          </div>
+
+          <!-- Base URL (Custom endpoint support) -->
+          <div class="space-y-1">
+            <div class="flex items-center justify-between text-xs text-slate-600 dark:text-zinc-400">
+              <span class="font-medium">Endpoint Base URL</span>
+              <button id="resetEndpointBtn" class="cursor-pointer text-[10px] text-orange-600 dark:text-orange-400 hover:underline font-semibold">Default</button>
+            </div>
+            <input
+              id="baseUrlInput"
+              type="text"
+              value="https://api.groq.com/openai/v1/chat/completions"
+              class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-slate-700 dark:text-zinc-400 focus:outline-none focus:border-orange-500"
+            />
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- MODAL: INSPECT PAYLOAD & cURL COMMAND -->
+  <div id="payloadModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-groq-card border border-slate-200 dark:border-groq-border rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="h-12 border-b border-slate-200 dark:border-groq-border px-4 flex items-center justify-between bg-slate-50 dark:bg-zinc-900/60">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-zinc-200">API Request Inspector</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="bg-slate-200 dark:bg-zinc-900 p-0.5 rounded-lg border border-slate-300 dark:border-zinc-800 text-xs">
+            <button id="modalTabJson" class="cursor-pointer px-2 py-0.5 rounded bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-200 font-semibold shadow-sm">JSON Payload</button>
+            <button id="modalTabCurl" class="cursor-pointer px-2 py-0.5 rounded text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 font-medium">cURL Command</button>
+          </div>
+          <button id="closePayloadModal" class="cursor-pointer text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white p-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4 flex-1 overflow-y-auto">
+        <pre id="modalPayloadContent" class="bg-slate-950 text-slate-100 p-4 rounded-xl border border-slate-800 text-xs font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+      </div>
+
+      <div class="h-12 border-t border-slate-200 dark:border-groq-border px-4 flex items-center justify-between bg-slate-50 dark:bg-zinc-900/40">
+        <span class="text-[11px] text-slate-500 dark:text-zinc-500">Payload ready for OpenAI/Groq API compliant clients</span>
+        <button id="copyModalPayloadBtn" class="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-medium transition shadow-sm active:scale-[0.98]">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          <span>Copy to Clipboard</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- APPLICATION JAVASCRIPT LOGIC -->
+  <script>
+    /**
+     * LLM PLAYGROUND DEVELOPER STUDIO
+     * Single-file vanilla JS architecture with Dark & Light Mode
+     */
+
+    // State Management
+    const state = {
+      theme: 'dark', // 'dark' | 'light'
+      provider: 'groq',
+      apiKey: '',
+      model: 'llama-3.1-8b-instant',
+      temperature: 0.70,
+      maxTokens: 4096,
+      topP: 1.00,
+      stream: true,
+      webSearch: false,
+      baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
+      demoMode: false,
+      isGenerating: false,
+      abortController: null,
+      lastRawResponse: null,
+      activeViewTab: 'rendered', // 'rendered' | 'raw'
+      currentAnalysis: {
+        shotType: 'Zero-Shot',
+        count: 0
+      }
+    };
+
+    // Provider Configurations
+    const PROVIDER_CONFIGS = {
+      groq: {
+        name: 'Groq',
+        baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
+        keyLink: 'https://console.groq.com/keys',
+        models: [
+          { id: 'llama-3.1-8b-instant', label: 'llama-3.1-8b-instant (Fastest ~750 T/s)' },
+          { id: 'llama-3.3-70b-versatile', label: 'llama-3.3-70b-versatile (Meta Llama 3.3)' },
+          { id: 'openai/gpt-oss-20b', label: 'openai/gpt-oss-20b (New Active Groq Flagship)' },
+          { id: 'openai/gpt-oss-120b', label: 'openai/gpt-oss-120b (120B Reasoning)' },
+          { id: 'deepseek-r1-distill-llama-70b', label: 'deepseek-r1-distill-llama-70b (Reasoning)' },
+          { id: 'llama3-8b-8192', label: 'llama3-8b-8192 (Legacy Llama 3)' },
+          { id: 'mixtral-8x7b-32768', label: 'mixtral-8x7b-32768 (MoE 32k)' },
+          { id: 'gemma2-9b-it', label: 'gemma2-9b-it (Google Gemma 2)' }
+        ]
+      },
+      xai: {
+        name: 'xAI (Grok)',
+        baseUrl: 'https://api.x.ai/v1/chat/completions',
+        keyLink: 'https://console.x.ai/',
+        models: [
+          { id: 'grok-2-latest', label: 'grok-2-latest (State of the Art)' },
+          { id: 'grok-2-vision-1212', label: 'grok-2-vision-1212 (Vision)' },
+          { id: 'grok-beta', label: 'grok-beta (Fast Preview)' }
+        ]
+      },
+      openai: {
+        name: 'OpenAI',
+        baseUrl: 'https://api.openai.com/v1/chat/completions',
+        keyLink: 'https://platform.openai.com/api-keys',
+        models: [
+          { id: 'gpt-4o-mini', label: 'gpt-4o-mini (Fast & Cost-Efficient)' },
+          { id: 'gpt-4o', label: 'gpt-4o (Flagship Multimodal)' },
+          { id: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo (Legacy)' },
+          { id: 'o3-mini', label: 'o3-mini (Reasoning)' }
+        ]
+      },
+      openrouter: {
+        name: 'OpenRouter',
+        baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
+        keyLink: 'https://openrouter.ai/keys',
+        models: [
+          { id: 'meta-llama/llama-3.1-8b-instruct:free', label: 'llama-3.1-8b-instruct (Free)' },
+          { id: 'mistralai/mistral-7b-instruct:free', label: 'mistral-7b-instruct (Free)' },
+          { id: 'anthropic/claude-3.5-sonnet', label: 'claude-3.5-sonnet' },
+          { id: 'openai/gpt-4o', label: 'gpt-4o' }
+        ]
+      },
+      custom: {
+        name: 'Custom Endpoint',
+        baseUrl: '',
+        keyLink: '',
+        models: []
+      }
+    };
+
+    // System Persona Presets
+    const SYSTEM_PRESETS = {
+      default: "You are a helpful, brilliant, and precise AI assistant. Answer queries factually and concisely.",
+      code_expert: "You are a Senior Principal Software Architect. Write high-performance, clean, memory-efficient, idiomatic code. Always include brief architectural reasoning followed by production-ready code blocks.",
+      json_extractor: "You are a strict data extraction engine. You MUST output exclusively valid RFC 8259 JSON without markdown formatting, preamble, or explanations.",
+      concise: "You are an executive intelligence analyst. Provide high-density, bulleted summaries with zero filler words or pleasantries.",
+      cot: "You are an expert socratic reasoning engine. Before giving your final answer, dissect the problem step-by-step under a '### Reasoning Process:' section.",
+      custom: ""
+    };
+
+    // Prompt Engineering Templates
+    const FEW_SHOT_TEMPLATES = {
+      'oneshot-simple': `### Example 1
+Input: "The package arrived 2 days earlier than scheduled and in pristine condition!"
+Output: {"sentiment": "positive", "confidence": 0.99, "aspect": "shipping"}
+
+---
+Input: `,
+
+      'fewshot-classification': `### Example 1
+Input: "Customer demands an immediate refund for unauthorized charge."
+Category: Billing & Fraud
+Priority: Critical
+
+### Example 2
+Input: "Where can I download my annual tax invoice?"
+Category: Account & Documents
+Priority: Low
+
+### Example 3
+Input: "Our database sync failed after deploying version 2.4."
+Category: Technical Bug
+Priority: High
+
+---
+Input: `,
+
+      'fewshot-json': `### Example 1
+Input: "Dr. Evelyn Vance visited the Zurich medical facility on Oct 12 at 3:15 PM."
+Output: {
+  "person": "Dr. Evelyn Vance",
+  "location": "Zurich medical facility",
+  "date": "2024-10-12",
+  "time": "15:15"
+}
+
+### Example 2
+Input: "Booked a table for Marcus at Le Cirque in Paris tomorrow night at 8 PM."
+Output: {
+  "person": "Marcus",
+  "location": "Le Cirque, Paris",
+  "date": "tomorrow",
+  "time": "20:00"
+}
+
+---
+Input: `,
+
+      'fewshot-code': `### Example 1
+Task: "Calculate total revenue per customer for completed orders in 2024"
+SQL: SELECT customer_id, SUM(order_total) AS total_revenue FROM orders WHERE status = 'COMPLETED' AND order_date >= '2024-01-01' GROUP BY customer_id ORDER BY total_revenue DESC;
+
+### Example 2
+Task: "Find all products with less than 5 units left in stock"
+SQL: SELECT product_id, product_name, stock_level FROM warehouse_inventory WHERE stock_level < 5 ORDER BY stock_level ASC;
+
+---
+Task: `,
+
+      'blank-example': `### Example
+Input: [Insert demonstration input]
+Output: [Insert expected output]
+
+---
+`
+    };
+
+    // Quick User Prompt Samples
+    const USER_PROMPT_SAMPLES = {
+      sentiment: `Classify the sentiment and emotion in this review:
+"The battery life is decent, but the screen scratches if you even breathe near it. Absolutely furious for a $1,200 phone."`,
+      code: `Write a lightweight, production-ready HTTP web server in Rust using Tokio and Axum that exposes a health check endpoint and an echo route with JSON parsing.`,
+      json: `Extract all companies, valuation, and round details from this report:
+"Anthropic closed a $4B round led by Amazon reaching a $18.4B post-money valuation. Meanwhile, Cohere raised $500M at a $5.5B mark."`
+    };
+
+    // Simulated LLM Responses for Demo Mode
+    const DEMO_RESPONSES = [
+      `### High-Performance LLM Execution
+
+The **LLM Playground** delivers groundbreaking determinism and sub-millisecond per-token latency.
+
+#### Sentiment Analysis Result:
+\`\`\`json
+{
+  "sentiment": "positive",
+  "confidence": 0.992,
+  "intensity": "high",
+  "features": [
+    "latency-praise",
+    "speed-satisfaction"
+  ]
+}
+\`\`\`
+
+> Ultra-fast inference engines process language models sequentially without memory bottlenecks.`,
+
+      `### Production-Ready Rust Axum Server
+
+Here is a clean implementation using \`tokio\` and \`axum\`:
+
+\`\`\`rust
+use axum::{routing::{get, post}, Json, Router};
+use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
+
+#[derive(Serialize)]
+struct HealthResponse {
+    status: &'static str,
+    timestamp: u64,
+}
+
+#[derive(Deserialize, Serialize)]
+struct EchoPayload {
+    message: String,
+}
+
+async fn health_check() -> Json<HealthResponse> {
+    Json(HealthResponse {
+        status: "ok",
+        timestamp: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs(),
+    })
+}
+
+async fn echo_handler(Json(payload): Json<EchoPayload>) -> Json<EchoPayload> {
+    Json(payload)
+}
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/health", get(health_check))
+        .route("/echo", post(echo_handler));
+
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    println!("LLM playground server listening on http://{}", addr);
+    
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+}
+\`\`\`
+
+#### Key Highlights:
+1. **Zero-copy ergonomics** with Axum extractors.
+2. **Asynchronous multithreading** powered by Tokio work-stealing runtime.`
+    ];
+
+    // DOM Elements
+    const elements = {
+      // Theme Toggle
+      themeToggleBtn: document.getElementById('themeToggleBtn'),
+      themeIconSun: document.getElementById('themeIconSun'),
+      themeIconMoon: document.getElementById('themeIconMoon'),
+      themeLabel: document.getElementById('themeLabel'),
+
+      // Inputs & Textareas
+      systemPrompt: document.getElementById('systemPrompt'),
+      userPrompt: document.getElementById('userPrompt'),
+      systemPresetSelect: document.getElementById('systemPresetSelect'),
+      clearSystemPrompt: document.getElementById('clearSystemPrompt'),
+      clearUserPrompt: document.getElementById('clearUserPrompt'),
+      systemTokenBadge: document.getElementById('systemTokenBadge'),
+      userTokenBadge: document.getElementById('userTokenBadge'),
+      
+      // Prompt Analyzer Elements
+      shotBadge: document.getElementById('shotBadge'),
+      shotBadgeDot: document.getElementById('shotBadgeDot'),
+      shotBadgeText: document.getElementById('shotBadgeText'),
+      shotCountText: document.getElementById('shotCountText'),
+      analyzePromptBtn: document.getElementById('analyzePromptBtn'),
+      injectExampleBtn: document.getElementById('injectExampleBtn'),
+      injectMenu: document.getElementById('injectMenu'),
+      autoAnalyzeCheckbox: document.getElementById('autoAnalyzeCheckbox'),
+      toggleAnalysisDetailsBtn: document.getElementById('toggleAnalysisDetailsBtn'),
+      analysisDetailsPanel: document.getElementById('analysisDetailsPanel'),
+      detailsToggleLabel: document.getElementById('detailsToggleLabel'),
+      detailsChevron: document.getElementById('detailsChevron'),
+      metricPatterns: document.getElementById('metricPatterns'),
+      metricConsistency: document.getElementById('metricConsistency'),
+      metricRatio: document.getElementById('metricRatio'),
+      analysisFeedbackText: document.getElementById('analysisFeedbackText'),
+
+      // Controls
+      submitBtn: document.getElementById('submitBtn'),
+      submitBtnText: document.getElementById('submitBtnText'),
+      submitIcon: document.getElementById('submitIcon'),
+      submitSpinner: document.getElementById('submitSpinner'),
+      stopBtn: document.getElementById('stopBtn'),
+      groundingActiveIndicator: document.getElementById('groundingActiveIndicator'),
+
+      // Response
+      statusIndicator: document.getElementById('statusIndicator'),
+      statsBar: document.getElementById('statsBar'),
+      latencyStat: document.getElementById('latencyStat'),
+      speedStat: document.getElementById('speedStat'),
+      tokenStat: document.getElementById('tokenStat'),
+      responseEmptyState: document.getElementById('responseEmptyState'),
+      responseLoadingState: document.getElementById('responseLoadingState'),
+      responseErrorState: document.getElementById('responseErrorState'),
+      errorTitle: document.getElementById('errorTitle'),
+      errorMessage: document.getElementById('errorMessage'),
+      errorRemedy: document.getElementById('errorRemedy'),
+      responseContent: document.getElementById('responseContent'),
+      responseRawJson: document.getElementById('responseRawJson'),
+      viewRenderedTab: document.getElementById('viewRenderedTab'),
+      viewRawTab: document.getElementById('viewRawTab'),
+      copyResponseBtn: document.getElementById('copyResponseBtn'),
+      elapsedCounter: document.getElementById('elapsedCounter'),
+
+      // Sidebar Controls
+      configSidebar: document.getElementById('configSidebar'),
+      sidebarToggleBtn: document.getElementById('sidebarToggleBtn'),
+      closeSidebarBtn: document.getElementById('closeSidebarBtn'),
+      providerSelect: document.getElementById('providerSelect'),
+      providerBadge: document.getElementById('providerBadge'),
+      apiKeyInput: document.getElementById('apiKeyInput'),
+      getKeyLink: document.getElementById('getKeyLink'),
+      keyFormatHint: document.getElementById('keyFormatHint'),
+      toggleKeyVisibility: document.getElementById('toggleKeyVisibility'),
+      eyeIcon: document.getElementById('eyeIcon'),
+      keyStatusDot: document.getElementById('keyStatusDot'),
+      saveKeyCheckbox: document.getElementById('saveKeyCheckbox'),
+      clearKeyBtn: document.getElementById('clearKeyBtn'),
+      modelSelect: document.getElementById('modelSelect'),
+      fetchModelsBtn: document.getElementById('fetchModelsBtn'),
+      navModelDisplay: document.getElementById('navModelDisplay'),
+      modelContextTag: document.getElementById('modelContextTag'),
+      customModelContainer: document.getElementById('customModelContainer'),
+      customModelInput: document.getElementById('customModelInput'),
+      tempSlider: document.getElementById('tempSlider'),
+      tempValueDisplay: document.getElementById('tempValueDisplay'),
+      maxTokensSlider: document.getElementById('maxTokensSlider'),
+      maxTokensValueDisplay: document.getElementById('maxTokensValueDisplay'),
+      topPSlider: document.getElementById('topPSlider'),
+      topPDisplay: document.getElementById('topPDisplay'),
+      streamToggle: document.getElementById('streamToggle'),
+      streamThumb: document.getElementById('streamThumb'),
+      webSearchToggle: document.getElementById('webSearchToggle'),
+      webSearchThumb: document.getElementById('webSearchThumb'),
+      webSearchNotice: document.getElementById('webSearchNotice'),
+      baseUrlInput: document.getElementById('baseUrlInput'),
+      resetEndpointBtn: document.getElementById('resetEndpointBtn'),
+
+      // Top Actions & Modals
+      demoModeToggle: document.getElementById('demoModeToggle'),
+      demoModeThumb: document.getElementById('demoModeThumb'),
+      demoModeBanner: document.getElementById('demoModeBanner'),
+      exitDemoBtn: document.getElementById('exitDemoBtn'),
+      viewPayloadBtn: document.getElementById('viewPayloadBtn'),
+      resetSessionBtn: document.getElementById('resetSessionBtn'),
+      payloadModal: document.getElementById('payloadModal'),
+      closePayloadModal: document.getElementById('closePayloadModal'),
+      modalPayloadContent: document.getElementById('modalPayloadContent'),
+      modalTabJson: document.getElementById('modalTabJson'),
+      modalTabCurl: document.getElementById('modalTabCurl'),
+      copyModalPayloadBtn: document.getElementById('copyModalPayloadBtn'),
+      toastContainer: document.getElementById('toastContainer')
+    };
+
+    /**
+     * INITIALIZATION
+     */
+    function init() {
+      initTheme();
+      loadSavedKey();
+      setupEventListeners();
+      setupAutoResize();
+      updateTokenEstimates();
+      analyzePromptStructure();
+      renderModelInfo();
+    }
+
+    /**
+     * THEME MANAGEMENT (DARK / LIGHT MODE)
+     */
+    function initTheme() {
+      const savedTheme = localStorage.getItem('llm_playground_theme');
+      if (savedTheme) {
+        state.theme = savedTheme;
+      } else {
+        state.theme = 'dark'; // Default developer dark theme
+      }
+      applyTheme(state.theme);
+    }
+
+    function applyTheme(theme) {
+      state.theme = theme;
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        elements.themeIconSun.classList.remove('hidden');
+        elements.themeIconMoon.classList.add('hidden');
+        elements.themeLabel.textContent = 'Dark';
+      } else {
+        document.documentElement.classList.remove('dark');
+        elements.themeIconSun.classList.add('hidden');
+        elements.themeIconMoon.classList.remove('hidden');
+        elements.themeLabel.textContent = 'Light';
+      }
+      localStorage.setItem('llm_playground_theme', theme);
+    }
+
+    function toggleTheme() {
+      const newTheme = state.theme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+      showToast(`Switched to ${newTheme} mode.`, 'info');
+    }
+
+    /**
+     * AUTO-RESIZING TEXTAREAS
+     */
+    function setupAutoResize() {
+      [elements.systemPrompt, elements.userPrompt].forEach(el => {
+        if (!el) return;
+        autoResize(el);
+        el.addEventListener('input', () => autoResize(el));
+      });
+    }
+
+    function autoResize(el) {
+      if (!el) return;
+      el.style.height = 'auto';
+      const minH = parseInt(el.dataset.minHeight, 10) || 60;
+      el.style.height = `${Math.max(el.scrollHeight, minH)}px`;
+    }
+
+    /**
+     * LOCAL STORAGE & KEY MANAGEMENT
+     */
+    function loadSavedKey() {
+      const saved = localStorage.getItem('llm_playground_api_key') || localStorage.getItem('groq_playground_api_key');
+      if (saved) {
+        state.apiKey = saved;
+        elements.apiKeyInput.value = saved;
+        elements.saveKeyCheckbox.checked = true;
+        updateKeyStatusBadge(true);
+        checkKeyFormat(saved);
+      } else {
+        updateKeyStatusBadge(false);
+      }
+    }
+
+    function updateKeyStatusBadge(hasKey) {
+      if (hasKey) {
+        elements.keyStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        elements.keyStatusDot.title = 'API key loaded';
+      } else {
+        elements.keyStatusDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+        elements.keyStatusDot.title = 'API key required';
+      }
+    }
+
+    /**
+     * PROMPT ANALYZER (ZERO-SHOT / ONE-SHOT / FEW-SHOT DETECTION ENGINE)
+     * Client-side deterministic pattern matcher
+     */
+    function analyzePromptStructure() {
+      const userText = elements.userPrompt.value || '';
+      const systemText = elements.systemPrompt.value || '';
+      const combined = `${systemText}\n\n${userText}`;
+
+      // Heuristic 1: Explicit numbered examples (e.g., "Example 1:", "### Example:", "Sample 2")
+      const exampleTagRegex = /(?:###\s*)?(?:Example|Ex|Demonstration|Sample)\s*(?:#|\d+|[A-Z])?:?/gi;
+      const exampleTagMatches = combined.match(exampleTagRegex) || [];
+
+      // Heuristic 2: Input / Output or Prompt / Completion pairs
+      const inputOutputRegex = /(?:Input|Query|Text|Task|Question|Q):\s*[\s\S]*?(?:Output|Response|Label|Result|Completion|SQL|Answer|A):\s*/gi;
+      const inputOutputMatches = combined.match(inputOutputRegex) || [];
+
+      // Heuristic 3: Explicit delimiter separators with demonstrations (--- or ===)
+      const delimiterBlocks = combined.split(/\n\s*---\s*\n|\n\s*===\s*\n/);
+      let delimiterDemoCount = 0;
+      if (delimiterBlocks.length > 1) {
+        delimiterDemoCount = delimiterBlocks.length - 1;
+      }
+
+      // Calculate the detected example count using the maximum reliable signal
+      const explicitExamples = Math.max(exampleTagMatches.length, inputOutputMatches.length);
+      const detectedCount = Math.max(explicitExamples, delimiterDemoCount > 0 ? delimiterDemoCount : 0);
+
+      // Determine Classification
+      let shotType = 'Zero-Shot';
+      if (detectedCount === 1) {
+        shotType = 'One-Shot';
+      } else if (detectedCount >= 2) {
+        shotType = 'Few-Shot';
+      }
+
+      state.currentAnalysis = {
+        shotType,
+        count: detectedCount,
+        hasExplicitTags: exampleTagMatches.length > 0,
+        hasInputOutput: inputOutputMatches.length > 0
+      };
+
+      // Update UI Badge
+      renderShotBadge(shotType, detectedCount);
+      updateAnalysisDetails(shotType, detectedCount, combined);
+    }
+
+    function renderShotBadge(shotType, count) {
+      elements.shotBadgeText.textContent = shotType;
+      elements.shotCountText.textContent = `${count} ${count === 1 ? 'Example' : 'Examples'}`;
+
+      if (shotType === 'Zero-Shot') {
+        elements.shotBadge.className = 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 transition-all shadow-sm';
+        elements.shotBadgeDot.className = 'w-2.5 h-2.5 rounded-full bg-sky-500';
+      } else if (shotType === 'One-Shot') {
+        elements.shotBadge.className = 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 transition-all shadow-sm';
+        elements.shotBadgeDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+      } else {
+        // Few-Shot
+        elements.shotBadge.className = 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 transition-all shadow-sm';
+        elements.shotBadgeDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
+      }
+    }
+
+    function updateAnalysisDetails(shotType, count, combined) {
+      if (count === 0) {
+        elements.metricPatterns.textContent = 'None (Standard instruction)';
+        elements.metricConsistency.textContent = 'Standard';
+        elements.metricRatio.textContent = '0% Demonstration';
+        elements.analysisFeedbackText.textContent = 'Prompt is currently Zero-Shot. No demonstration blocks found. Click "Inject Example" to add structural few-shot pairs to guide formatting, schema adherence, or reasoning.';
+      } else if (count === 1) {
+        elements.metricPatterns.textContent = 'Single Input/Output pair';
+        elements.metricConsistency.textContent = 'Moderate';
+        elements.metricRatio.textContent = '~35% Demonstration';
+        elements.analysisFeedbackText.textContent = 'One-Shot prompt detected. The model has 1 demonstration context. Pro Tip: Adding a 2nd or 3rd contrasting or edge-case example turns this into Few-Shot and drastically reduces hallucinations.';
+      } else {
+        elements.metricPatterns.textContent = `${count} Distinct Exemplars`;
+        elements.metricConsistency.textContent = 'High (Optimal)';
+        elements.metricRatio.textContent = '~60% Demonstration';
+        elements.analysisFeedbackText.textContent = `Few-Shot prompt detected with ${count} examples! Excellent structure. Ensure delimiters like '### Example' and 'Input/Output' remain consistent throughout all examples for maximal alignment.`;
+      }
+    }
+
+    /**
+     * INJECT EXAMPLE HANDLER
+     */
+    function injectTemplate(templateKey) {
+      const template = FEW_SHOT_TEMPLATES[templateKey];
+      if (!template) return;
+
+      const textarea = elements.userPrompt;
+      const existing = textarea.value.trim();
+
+      if (!existing) {
+        textarea.value = template;
+      } else {
+        textarea.value = `${template}\n${existing}`;
+      }
+
+      // Close menu
+      elements.injectMenu.classList.add('hidden');
+
+      // Trigger re-analysis, token count & auto-resize
+      autoResize(textarea);
+      analyzePromptStructure();
+      updateTokenEstimates();
+
+      showToast(`Injected ${templateKey.replace('-', ' ')} template!`, 'success');
+      textarea.focus();
+    }
+
+    /**
+     * TOKEN ESTIMATOR (~3.8 to 4 chars per token approximation)
+     */
+    function estimateTokens(text) {
+      if (!text) return 0;
+      return Math.ceil(text.length / 4);
+    }
+
+    function updateTokenEstimates() {
+      const sysTokens = estimateTokens(elements.systemPrompt.value);
+      const userTokens = estimateTokens(elements.userPrompt.value);
+      
+      elements.systemTokenBadge.textContent = `~${sysTokens} tokens`;
+      elements.userTokenBadge.textContent = `~${userTokens} tokens`;
+    }
+
+    /**
+     * PROVIDER MANAGEMENT & KEY FORMAT CHECKER
+     */
+    function handleProviderChange(providerKey, autoModel = null) {
+      const cfg = PROVIDER_CONFIGS[providerKey];
+      if (!cfg) return;
+
+      state.provider = providerKey;
+      if (cfg.baseUrl) {
+        state.baseUrl = cfg.baseUrl;
+        elements.baseUrlInput.value = cfg.baseUrl;
+      }
+      elements.providerBadge.textContent = cfg.name;
+      if (cfg.keyLink) {
+        elements.getKeyLink.href = cfg.keyLink;
+      }
+
+      if (cfg.models.length > 0) {
+        elements.modelSelect.innerHTML = cfg.models.map((m, idx) => {
+          const selected = autoModel ? (m.id === autoModel) : (idx === 0);
+          return `<option value="${m.id}" ${selected ? 'selected' : ''}>${m.label || m.id}</option>`;
+        }).join('') + '<option value="custom">Custom Model ID...</option>';
+        elements.modelSelect.value = autoModel || cfg.models[0].id;
+      }
+
+      renderModelInfo();
+      checkKeyFormat(state.apiKey);
+    }
+
+    function checkKeyFormat(key) {
+      const hint = elements.keyFormatHint;
+      if (!key) {
+        hint.classList.add('hidden');
+        return;
+      }
+
+      const trimmed = key.trim();
+      if (state.provider === 'groq') {
+        if (trimmed.startsWith('xai-')) {
+          hint.className = 'text-[11px] p-2 rounded-lg font-medium transition-all bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700/60 text-amber-900 dark:text-amber-200 mt-1';
+          hint.innerHTML = `
+            <div><strong>⚠️ xAI (Grok) Key Detected:</strong> You entered an xAI key (<code>${trimmed.substring(0, 7)}...</code>) while provider is set to Groq.</div>
+            <div class="mt-1.5 flex items-center gap-2">
+              <button id="switchProviderXaiBtn" type="button" class="cursor-pointer px-2 py-0.5 rounded bg-orange-600 hover:bg-orange-500 text-white font-semibold text-[11px] transition shadow-sm active:scale-[0.98]">
+                Switch to xAI / Grok
+              </button>
+              <a href="https://console.groq.com/keys" target="_blank" class="underline text-orange-600 dark:text-orange-400">Get Groq Key</a>
+            </div>
+          `;
+          hint.classList.remove('hidden');
+
+          const btn = document.getElementById('switchProviderXaiBtn');
+          if (btn) {
+            btn.onclick = () => {
+              elements.providerSelect.value = 'xai';
+              handleProviderChange('xai', 'grok-2-latest');
+              showToast('Switched provider to xAI (Grok)!', 'success');
+            };
+          }
+          return;
+        }
+
+        if (trimmed.startsWith('sk-proj-') || (trimmed.startsWith('sk-') && !trimmed.startsWith('gsk_'))) {
+          hint.className = 'text-[11px] p-2 rounded-lg font-medium transition-all bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700/60 text-amber-900 dark:text-amber-200 mt-1';
+          hint.innerHTML = `
+            <div><strong>⚠️ OpenAI Key Detected:</strong> You entered an OpenAI key (<code>${trimmed.substring(0, 7)}...</code>). Groq keys start with <code>gsk_</code>.</div>
+            <div class="mt-1.5 flex items-center gap-2">
+              <button id="switchProviderOpenAiBtn" type="button" class="cursor-pointer px-2 py-0.5 rounded bg-orange-600 hover:bg-orange-500 text-white font-semibold text-[11px] transition shadow-sm active:scale-[0.98]">
+                Switch to OpenAI (gpt-4o-mini)
+              </button>
+              <a href="https://console.groq.com/keys" target="_blank" class="underline text-orange-600 dark:text-orange-400">Get Groq Key</a>
+            </div>
+          `;
+          hint.classList.remove('hidden');
+
+          const btn = document.getElementById('switchProviderOpenAiBtn');
+          if (btn) {
+            btn.onclick = () => {
+              elements.providerSelect.value = 'openai';
+              handleProviderChange('openai', 'gpt-4o-mini');
+              showToast('Switched provider to OpenAI with gpt-4o-mini!', 'success');
+            };
+          }
+          return;
+        } else if (trimmed.startsWith('gsk_')) {
+          hint.className = 'text-[11px] p-1.5 rounded-lg font-medium transition-all bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 mt-1 flex items-center gap-1.5';
+          hint.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>Valid Groq key prefix (<code>gsk_...</code>)</span>`;
+          hint.classList.remove('hidden');
+          return;
+        }
+      }
+
+      hint.classList.add('hidden');
+    }
+
+    /**
+     * MODEL DETAILS HELPER
+     */
+    function renderModelInfo() {
+      const val = elements.modelSelect.value || state.model || 'llama-3.1-8b-instant';
+      if (val === 'custom') {
+        elements.customModelContainer.classList.remove('hidden');
+        state.model = elements.customModelInput.value || 'custom-model';
+        elements.navModelDisplay.textContent = state.model;
+        elements.modelContextTag.textContent = 'custom context';
+      } else {
+        elements.customModelContainer.classList.add('hidden');
+        state.model = val;
+        elements.navModelDisplay.textContent = val;
+
+        if (val.includes('8b') || val.includes('70b') || val.includes('llama-3') || val.includes('gpt-4o')) {
+          elements.modelContextTag.textContent = '128k context';
+        } else if (val.includes('mixtral')) {
+          elements.modelContextTag.textContent = '32k context';
+        } else if (val.includes('gemma')) {
+          elements.modelContextTag.textContent = '8k context';
+        } else {
+          elements.modelContextTag.textContent = '128k context';
+        }
+      }
+    }
+
+    /**
+     * DYNAMICALLY SYNC AVAILABLE MODELS VIA API
+     */
+    async function fetchAvailableModels() {
+      const key = state.apiKey.trim();
+      if (!key) {
+        showToast('Please enter your API key first to sync available models.', 'info');
+        elements.apiKeyInput.focus();
+        return;
+      }
+
+      const baseUrl = elements.baseUrlInput.value.trim() || state.baseUrl;
+      const modelsUrl = baseUrl.replace(/\/chat\/completions\/?$/, '/models');
+
+      try {
+        elements.fetchModelsBtn.innerHTML = `
+          <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+          <span>Syncing...</span>
+        `;
+        elements.fetchModelsBtn.disabled = true;
+
+        const res = await fetch(modelsUrl, {
+          headers: { 'Authorization': `Bearer ${key}` }
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const json = await res.json();
+        const modelList = json.data || [];
+        if (modelList.length > 0) {
+          // Filter out audio/tts models and sort text LLMs
+          const chatModels = modelList
+            .map(m => m.id)
+            .filter(id => !id.includes('whisper') && !id.includes('tts') && !id.includes('guard'))
+            .sort();
+
+          const currentSelected = elements.modelSelect.value;
+          elements.modelSelect.innerHTML = chatModels.map(id => {
+            const isSelected = (id === currentSelected) || (!chatModels.includes(currentSelected) && id.includes('8b-instant'));
+            return `<option value="${id}" ${isSelected ? 'selected' : ''}>${id}</option>`;
+          }).join('') + '<option value="custom">Custom Model ID...</option>';
+
+          renderModelInfo();
+          showToast(`Successfully synced ${chatModels.length} active models for your key!`, 'success');
+        }
+      } catch (err) {
+        console.warn('Model sync failed:', err);
+        showToast('Could not sync models. Verify API key and network.', 'error');
+      } finally {
+        elements.fetchModelsBtn.innerHTML = `
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span>Sync Models</span>
+        `;
+        elements.fetchModelsBtn.disabled = false;
+      }
+    }
+
+    /**
+     * CONSTRUCT API PAYLOAD
+     */
+    function buildPayload() {
+      const model = (elements.modelSelect.value === 'custom') 
+        ? (elements.customModelInput.value.trim() || 'llama-3.1-8b-instant')
+        : elements.modelSelect.value;
+
+      const systemContent = elements.systemPrompt.value.trim();
+      const userContent = elements.userPrompt.value.trim();
+
+      const messages = [];
+      if (systemContent) {
+        messages.push({ role: 'system', content: systemContent });
+      }
+      messages.push({ role: 'user', content: userContent || 'Hello!' });
+
+      const payload = {
+        model: model,
+        messages: messages,
+        temperature: parseFloat(elements.tempSlider.value),
+        max_tokens: parseInt(elements.maxTokensSlider.value, 10),
+        top_p: parseFloat(elements.topPSlider.value),
+        stream: state.stream
+      };
+
+      // Grounding / Web Search tools parameter
+      if (state.webSearch) {
+        payload.tools = [
+          {
+            type: "function",
+            function: {
+              name: "web_search",
+              description: "Perform live web searches to ground responses in verified, real-time facts and citations.",
+              parameters: {
+                type: "object",
+                properties: {
+                  query: {
+                    type: "string",
+                    description: "The targeted search query to execute"
+                  }
+                },
+                required: ["query"]
+              }
+            }
+          }
+        ];
+        payload.tool_choice = "auto";
+      }
+
+      return payload;
+    }
+
+    /**
+     * GENERATE cURL COMMAND
+     */
+    function buildCurlCommand(payload) {
+      const url = elements.baseUrlInput.value.trim() || state.baseUrl;
+      const key = state.apiKey ? state.apiKey : '$API_KEY';
+      return `curl -X POST "${url}" \\
+  -H "Authorization: Bearer ${key}" \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify(payload, null, 2)}'`;
+    }
+
+    /**
+     * EXECUTE LLM API REQUEST (ROBUST FETCH WITH STREAMING)
+     */
+    async function submitPrompt() {
+      if (state.isGenerating) return;
+
+      const userText = elements.userPrompt.value.trim();
+      if (!userText) {
+        showToast('Please enter a user prompt first.', 'error');
+        elements.userPrompt.focus();
+        return;
+      }
+
+      // Check API Key unless in Demo Mode
+      const key = state.apiKey.trim();
+      if (!key && !state.demoMode) {
+        showError(
+          'Missing API Key',
+          'No API Key was provided. Enter your API key in the configuration sidebar to the right, or enable "Demo Mode" at the top to test with simulated responses.',
+          'Get a free API key at https://console.groq.com/keys'
+        );
+        elements.apiKeyInput.focus();
+        elements.configSidebar.classList.remove('translate-x-full');
+        return;
+      }
+
+      // Update UI to Loading
+      setGeneratingState(true);
+      resetResponseArea();
+
+      const startTime = performance.now();
+      let timerInterval = setInterval(() => {
+        const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+        elements.elapsedCounter.textContent = `${elapsed}s`;
+      }, 50);
+
+      // Handle DEMO MODE (Fast simulated streaming)
+      if (state.demoMode) {
+        await executeDemoStream(startTime, timerInterval);
+        return;
+      }
+
+      // Build real request payload
+      const payload = buildPayload();
+      const endpoint = elements.baseUrlInput.value.trim() || state.baseUrl;
+
+      state.abortController = new AbortController();
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          signal: state.abortController.signal
+        });
+
+        clearInterval(timerInterval);
+
+        if (!response.ok) {
+          const errorJson = await response.json().catch(() => ({}));
+          const errorMsg = errorJson?.error?.message || `HTTP ${response.status} ${response.statusText}`;
+          throw new Error(errorMsg);
+        }
+
+        // Handle Streaming
+        if (state.stream && response.body) {
+          await handleStreamResponse(response, startTime);
+        } else {
+          // Non-streaming response
+          const data = await response.json();
+          handleNonStreamResponse(data, startTime);
+        }
+
+      } catch (err) {
+        clearInterval(timerInterval);
+        if (err.name === 'AbortError') {
+          elements.statusIndicator.textContent = 'Cancelled';
+          elements.statusIndicator.className = 'text-[11px] font-mono text-amber-500 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20';
+          showToast('Generation stopped by user.', 'info');
+        } else {
+          console.error('API Error:', err);
+          let remedy = 'Check your API key, endpoint URL, and model quota.';
+          let isModelAccessError = false;
+
+          if (err.message.includes('does not exist or you do not have access to it')) {
+            isModelAccessError = true;
+            remedy = `Your API key does not have access to '${state.model}'. Free tier accounts have guaranteed access to 8B models (like 'llama-3.1-8b-instant') while 70B models often require upgraded quotas or paid tiers.`;
+          } else if (err.message.includes('401') || err.message.toLowerCase().includes('invalid api key')) {
+            remedy = 'Your API key is invalid or expired. Check console.groq.com/keys.';
+          } else if (err.message.includes('429')) {
+            remedy = 'Rate limit exceeded. Wait a few moments or switch to a different model.';
+          } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+            remedy = 'Network or CORS error. If connecting to a custom endpoint, ensure CORS headers are enabled.';
+          }
+          showError(isModelAccessError ? 'Model Access Restricted' : 'Request Failed', err.message, remedy, isModelAccessError);
+        }
+      } finally {
+        setGeneratingState(false);
+      }
+    }
+
+    /**
+     * STREAMING RESPONSE PROCESSOR (SSE parser with TextDecoder)
+     */
+    async function handleStreamResponse(response, startTime) {
+      elements.responseLoadingState.classList.add('hidden');
+      elements.responseContent.classList.remove('hidden');
+      elements.statusIndicator.textContent = 'Streaming...';
+      elements.statusIndicator.className = 'text-[11px] font-mono text-orange-600 dark:text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20 animate-pulse font-semibold';
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let accumulatedText = '';
+      let firstTokenTime = null;
+      let totalTokensEstimated = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith(':')) continue;
+
+          if (trimmed === 'data: [DONE]') {
+            break;
+          }
+
+          if (trimmed.startsWith('data: ')) {
+            try {
+              const json = JSON.parse(trimmed.slice(6));
+              const delta = json?.choices?.[0]?.delta?.content || '';
+              if (delta) {
+                if (!firstTokenTime) {
+                  firstTokenTime = performance.now();
+                }
+                accumulatedText += delta;
+                totalTokensEstimated += estimateTokens(delta);
+
+                // Render live markdown with cursor
+                renderMarkdown(accumulatedText, true);
+
+                // Live Tok/s update
+                const elapsedSec = (performance.now() - startTime) / 1000;
+                const speed = (totalTokensEstimated / elapsedSec).toFixed(0);
+                elements.speedStat.textContent = `${speed} tok/s`;
+                elements.tokenStat.textContent = `~${totalTokensEstimated}`;
+              }
+            } catch (e) {
+              // Partial line chunk, continue
+            }
+          }
+        }
+      }
+
+      const totalTimeMs = Math.round(performance.now() - startTime);
+      const totalSec = totalTimeMs / 1000;
+      const finalToks = estimateTokens(accumulatedText);
+      const finalSpeed = Math.round(finalToks / (totalSec || 0.001));
+
+      // Final complete render without blinking cursor
+      renderMarkdown(accumulatedText, false);
+
+      state.lastRawResponse = {
+        model: state.model,
+        content: accumulatedText,
+        tokens: finalToks,
+        latency_ms: totalTimeMs,
+        speed_tok_s: finalSpeed
+      };
+      elements.responseRawJson.textContent = JSON.stringify(state.lastRawResponse, null, 2);
+
+      // Final stats update
+      elements.latencyStat.textContent = `${totalTimeMs} ms`;
+      elements.speedStat.textContent = `${finalSpeed} tok/s`;
+      elements.tokenStat.textContent = `${finalToks}`;
+      elements.statusIndicator.textContent = `Done (${(totalSec).toFixed(2)}s)`;
+      elements.statusIndicator.className = 'text-[11px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-semibold';
+    }
+
+    /**
+     * NON-STREAMING RESPONSE PROCESSOR
+     */
+    function handleNonStreamResponse(data, startTime) {
+      elements.responseLoadingState.classList.add('hidden');
+      elements.responseContent.classList.remove('hidden');
+
+      state.lastRawResponse = data;
+      elements.responseRawJson.textContent = JSON.stringify(data, null, 2);
+
+      const content = data?.choices?.[0]?.message?.content || 'Empty response received.';
+      renderMarkdown(content, false);
+
+      const totalTimeMs = Math.round(performance.now() - startTime);
+      const usage = data?.usage || {};
+      const completionTokens = usage.completion_tokens || estimateTokens(content);
+      const speed = Math.round(completionTokens / (totalTimeMs / 1000 || 0.001));
+
+      elements.latencyStat.textContent = `${totalTimeMs} ms`;
+      elements.speedStat.textContent = `${speed} tok/s`;
+      elements.tokenStat.textContent = `${completionTokens}`;
+      elements.statusIndicator.textContent = 'Completed';
+      elements.statusIndicator.className = 'text-[11px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-semibold';
+    }
+
+    /**
+     * DEMO STREAM SIMULATOR (Fast LLM playground preview)
+     */
+    async function executeDemoStream(startTime, timerInterval) {
+      await new Promise(r => setTimeout(r, 120)); // fast TTFT
+      clearInterval(timerInterval);
+
+      elements.responseLoadingState.classList.add('hidden');
+      elements.responseContent.classList.remove('hidden');
+      elements.statusIndicator.textContent = 'Streaming...';
+      elements.statusIndicator.className = 'text-[11px] font-mono text-orange-600 dark:text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20 animate-pulse font-semibold';
+
+      // Pick simulated response
+      const sampleText = elements.userPrompt.value.toLowerCase().includes('rust') ? DEMO_RESPONSES[1] : DEMO_RESPONSES[0];
+      const words = sampleText.split(' ');
+
+      let currentText = '';
+      let tokenCount = 0;
+
+      for (let i = 0; i < words.length; i++) {
+        if (!state.isGenerating) break;
+
+        currentText += (i === 0 ? '' : ' ') + words[i];
+        tokenCount += estimateTokens(words[i]);
+
+        renderMarkdown(currentText, true);
+
+        const elapsed = (performance.now() - startTime) / 1000;
+        const liveSpeed = Math.round(tokenCount / (elapsed || 0.01));
+        elements.speedStat.textContent = `${Math.min(liveSpeed, 480)} tok/s`;
+        elements.tokenStat.textContent = `~${tokenCount}`;
+
+        await new Promise(r => setTimeout(r, 10));
+      }
+
+      const totalTimeMs = Math.round(performance.now() - startTime);
+      renderMarkdown(currentText, false);
+
+      state.lastRawResponse = {
+        demo_mode: true,
+        model: state.model,
+        content: currentText,
+        total_tokens: tokenCount,
+        latency_ms: totalTimeMs,
+        simulated_speed: '380 tok/s'
+      };
+      elements.responseRawJson.textContent = JSON.stringify(state.lastRawResponse, null, 2);
+
+      elements.latencyStat.textContent = `${totalTimeMs} ms`;
+      elements.speedStat.textContent = `~380 tok/s`;
+      elements.tokenStat.textContent = `${tokenCount}`;
+      elements.statusIndicator.textContent = `Demo Finished`;
+      elements.statusIndicator.className = 'text-[11px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-semibold';
+
+      setGeneratingState(false);
+    }
+
+    /**
+     * MARKDOWN RENDERER WITH SYNTAX HIGHLIGHTING & CODE COPY BUTTONS
+     */
+    function renderMarkdown(rawText, isStreaming) {
+      if (typeof marked !== 'undefined') {
+        let html = marked.parse(rawText);
+        if (isStreaming) {
+          html += '<span class="streaming-cursor"></span>';
+        }
+        elements.responseContent.innerHTML = html;
+
+        // Apply highlight.js to code blocks
+        if (typeof hljs !== 'undefined') {
+          elements.responseContent.querySelectorAll('pre code').forEach((block) => {
+            if (!block.dataset.highlighted) {
+              hljs.highlightElement(block);
+              block.dataset.highlighted = 'true';
+            }
+          });
+        }
+
+        // Add 1-click copy buttons to code blocks
+        elements.responseContent.querySelectorAll('pre').forEach((pre) => {
+          if (!pre.querySelector('.copy-code-btn')) {
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'cursor-pointer copy-code-btn absolute top-2 right-2 px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] rounded font-mono border border-slate-600 transition opacity-80 hover:opacity-100 flex items-center gap-1 active:scale-[0.98]';
+            copyBtn.innerHTML = `
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span>Copy Code</span>
+            `;
+            copyBtn.onclick = (e) => {
+              e.stopPropagation();
+              const code = pre.querySelector('code')?.innerText || pre.innerText;
+              navigator.clipboard.writeText(code);
+              copyBtn.innerHTML = `
+                <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Copied!</span>
+              `;
+              setTimeout(() => {
+                copyBtn.innerHTML = `
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                  <span>Copy Code</span>
+                `;
+              }, 1500);
+            };
+            pre.appendChild(copyBtn);
+          }
+        });
+
+      } else {
+        // Fallback plain text
+        elements.responseContent.textContent = rawText;
+      }
+    }
+
+    /**
+     * UI STATE HELPERS
+     */
+    function setGeneratingState(isBusy) {
+      state.isGenerating = isBusy;
+      if (isBusy) {
+        elements.submitBtn.disabled = true;
+        elements.submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        elements.submitIcon.classList.add('hidden');
+        elements.submitSpinner.classList.remove('hidden');
+        elements.submitBtnText.textContent = 'Generating...';
+        elements.stopBtn.classList.remove('hidden');
+      } else {
+        elements.submitBtn.disabled = false;
+        elements.submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+        elements.submitIcon.classList.remove('hidden');
+        elements.submitSpinner.classList.add('hidden');
+        elements.submitBtnText.textContent = 'Run Prompt';
+        elements.stopBtn.classList.add('hidden');
+      }
+    }
+
+    function resetResponseArea() {
+      elements.responseEmptyState.classList.add('hidden');
+      elements.responseErrorState.classList.add('hidden');
+      elements.responseContent.classList.add('hidden');
+      elements.responseRawJson.classList.add('hidden');
+      elements.responseLoadingState.classList.remove('hidden');
+      elements.elapsedCounter.textContent = '0.00s';
+      elements.statusIndicator.textContent = 'Connecting...';
+      elements.statusIndicator.className = 'text-[11px] font-mono text-orange-600 dark:text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20';
+      elements.latencyStat.textContent = '-- ms';
+      elements.speedStat.textContent = '-- tok/s';
+      elements.tokenStat.textContent = '--';
+    }
+
+    function showError(title, message, remedy, isModelAccessError = false) {
+      elements.responseEmptyState.classList.add('hidden');
+      elements.responseLoadingState.classList.add('hidden');
+      elements.responseContent.classList.add('hidden');
+      elements.responseRawJson.classList.add('hidden');
+      elements.responseErrorState.classList.remove('hidden');
+
+      elements.errorTitle.textContent = title;
+      elements.errorMessage.textContent = message;
+
+      let remedyHtml = remedy || '';
+      const key = state.apiKey.trim();
+      const isLikelyOpenAiKey = key.startsWith('sk-proj-') || (key.startsWith('sk-') && !key.startsWith('gsk_'));
+
+      if (isLikelyOpenAiKey && state.provider === 'groq') {
+        remedyHtml = `
+          <div class="space-y-2">
+            <div class="font-bold text-amber-800 dark:text-amber-300 text-xs">
+              Root Cause: You entered an OpenAI API Key (<span class="font-mono">${key.substring(0, 8)}...</span>) while calling Groq!
+            </div>
+            <div class="text-[11px] text-slate-700 dark:text-zinc-300 leading-relaxed">
+              OpenAI models are not hosted on Groq, and Groq requires keys starting with <code class="font-mono bg-red-100 dark:bg-red-900/60 px-1 py-0.5 rounded text-red-700 dark:text-red-200">gsk_</code>.
+            </div>
+            <div class="pt-2 flex flex-wrap items-center gap-2">
+              <button id="switchProviderFromErrorBtn" type="button" class="cursor-pointer px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-semibold text-xs shadow-sm transition active:scale-[0.98]">
+                Switch to OpenAI &amp; Run with gpt-4o-mini
+              </button>
+              <a href="https://console.groq.com/keys" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 text-xs font-medium transition">
+                Get Free Groq Key (console.groq.com)
+              </a>
+            </div>
+          </div>
+        `;
+      } else if (isModelAccessError) {
+        remedyHtml += `
+          <div class="mt-3 pt-2.5 border-t border-red-300 dark:border-red-900/60 space-y-2">
+            <div class="text-[11px] text-slate-700 dark:text-zinc-300 leading-relaxed font-medium">
+              Active models on Groq frequently rotate. You can switch to a verified active model below, scan your key's permissions, or test instantly in Demo Mode:
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="testGptOssBtn" type="button" class="cursor-pointer px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-semibold text-xs transition shadow-sm active:scale-[0.98]">
+                Try openai/gpt-oss-20b
+              </button>
+              <button id="testLlama3LegacyBtn" type="button" class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-800 dark:bg-zinc-800 hover:bg-slate-700 dark:hover:bg-zinc-700 text-white font-semibold text-xs transition shadow-sm active:scale-[0.98]">
+                Try llama3-8b-8192
+              </button>
+              <button id="enableDemoFromErrorBtn" type="button" class="cursor-pointer px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition shadow-sm active:scale-[0.98]">
+                Run in Demo Mode
+              </button>
+              <button id="diagnoseKeyModelsBtn" type="button" class="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 font-semibold text-xs transition shadow-sm active:scale-[0.98]">
+                <svg class="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <span>Scan Allowed Models</span>
+              </button>
+            </div>
+            <div id="diagnosedModelsContainer" class="hidden mt-2 p-3 rounded-lg bg-black/40 border border-slate-700 dark:border-zinc-700 text-xs"></div>
+          </div>
+        `;
+      }
+
+      elements.errorRemedy.innerHTML = remedyHtml;
+
+      const switchBtn = document.getElementById('switchProviderFromErrorBtn');
+      if (switchBtn) {
+        switchBtn.onclick = () => {
+          elements.providerSelect.value = 'openai';
+          handleProviderChange('openai', 'gpt-4o-mini');
+          showToast('Switched provider to OpenAI! Running prompt...', 'info');
+          submitPrompt();
+        };
+      }
+
+      const testLegacyBtn = document.getElementById('testLlama3LegacyBtn');
+      if (testLegacyBtn) {
+        testLegacyBtn.onclick = () => {
+          elements.modelSelect.value = 'llama3-8b-8192';
+          renderModelInfo();
+          showToast('Switched to llama3-8b-8192. Retrying...', 'info');
+          submitPrompt();
+        };
+      }
+
+      const diagnoseBtn = document.getElementById('diagnoseKeyModelsBtn');
+      if (diagnoseBtn) {
+        diagnoseBtn.onclick = async () => {
+          diagnoseBtn.disabled = true;
+          diagnoseBtn.innerHTML = `<span>Checking /models endpoint...</span>`;
+          const container = document.getElementById('diagnosedModelsContainer');
+          container.classList.remove('hidden');
+          container.innerHTML = `<span class="animate-pulse text-zinc-300">Connecting to API /models to inspect permitted models...</span>`;
+
+          try {
+            const modelsUrl = state.baseUrl.replace(/\/chat\/completions\/?$/, '/models');
+            const res = await fetch(modelsUrl, {
+              headers: { 'Authorization': `Bearer ${state.apiKey.trim()}` }
+            });
+
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              container.innerHTML = `
+                <div class="text-red-400 font-semibold">Server returned HTTP ${res.status}: ${errData?.error?.message || res.statusText}</div>
+                <div class="text-[11px] text-zinc-400 mt-1">This key was rejected by the server. If this is an OpenAI key (sk-...), switch Provider to OpenAI. If using Groq, verify the key was copied from console.groq.com/keys.</div>
+              `;
+              return;
+            }
+
+            const data = await res.json();
+            const models = (data.data || []).map(m => m.id).filter(id => !id.includes('whisper') && !id.includes('tts')).sort();
+
+            if (models.length === 0) {
+              container.innerHTML = `
+                <div class="text-amber-300 font-semibold">Your key has 0 models enabled.</div>
+                <div class="text-[11px] text-zinc-400 mt-1">In Groq Console -> Projects -> Settings -> Allowed Models, enable model access for this API key.</div>
+              `;
+            } else {
+              container.innerHTML = `
+                <div class="font-semibold text-emerald-400 mb-1.5">✓ Your key has access to ${models.length} active models. Click any model to select and run:</div>
+                <div class="flex flex-wrap gap-1.5">
+                  ${models.map(id => `<button type="button" class="cursor-pointer diagnosed-model-pill px-2.5 py-1 rounded bg-zinc-800 hover:bg-orange-600 text-zinc-200 hover:text-white text-[11px] font-mono border border-zinc-700 transition active:scale-[0.98]" data-model="${id}">${id}</button>`).join('')}
+                </div>
+              `;
+
+              container.querySelectorAll('.diagnosed-model-pill').forEach(pill => {
+                pill.onclick = () => {
+                  const mId = pill.getAttribute('data-model');
+                  if (!Array.from(elements.modelSelect.options).some(o => o.value === mId)) {
+                    const opt = document.createElement('option');
+                    opt.value = mId;
+                    opt.textContent = mId;
+                    elements.modelSelect.insertBefore(opt, elements.modelSelect.firstChild);
+                  }
+                  elements.modelSelect.value = mId;
+                  renderModelInfo();
+                  showToast(`Selected ${mId}! Running prompt...`, 'info');
+                  submitPrompt();
+                };
+              });
+            }
+
+          } catch (err) {
+            container.innerHTML = `<div class="text-red-400">Failed to connect to /models endpoint: ${err.message}</div>`;
+          } finally {
+            diagnoseBtn.disabled = false;
+            diagnoseBtn.innerHTML = `<span>Re-scan Models</span>`;
+          }
+        };
+
+        // Automatically trigger live model diagnostic on access error
+        setTimeout(() => diagnoseBtn.click(), 50);
+      }
+
+      const testGptOssBtn = document.getElementById('testGptOssBtn');
+      if (testGptOssBtn) {
+        testGptOssBtn.onclick = () => {
+          if (!Array.from(elements.modelSelect.options).some(o => o.value === 'openai/gpt-oss-20b')) {
+            const opt = document.createElement('option');
+            opt.value = 'openai/gpt-oss-20b';
+            opt.textContent = 'openai/gpt-oss-20b (Active Groq Flagship)';
+            elements.modelSelect.insertBefore(opt, elements.modelSelect.firstChild);
+          }
+          elements.modelSelect.value = 'openai/gpt-oss-20b';
+          renderModelInfo();
+          showToast('Switched to openai/gpt-oss-20b. Running prompt...', 'info');
+          submitPrompt();
+        };
+      }
+
+      const enableDemoBtn = document.getElementById('enableDemoFromErrorBtn');
+      if (enableDemoBtn) {
+        enableDemoBtn.onclick = () => {
+          state.demoMode = true;
+          elements.demoToggleBtn.setAttribute('aria-checked', 'true');
+          elements.demoToggleThumb.classList.remove('left-0.5');
+          elements.demoToggleThumb.classList.add('right-0.5');
+          elements.demoToggleBtn.classList.remove('bg-slate-300', 'dark:bg-zinc-700');
+          elements.demoToggleBtn.classList.add('bg-orange-600');
+          showToast('Demo Mode enabled! Running simulated response...', 'success');
+          submitPrompt();
+        };
+      }
+
+      elements.statusIndicator.textContent = 'Failed';
+      elements.statusIndicator.className = 'text-[11px] font-mono text-red-600 dark:text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 font-semibold';
+    }
+
+    function showToast(msg, type = 'info') {
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-emerald-50 dark:bg-emerald-950 border-emerald-300 dark:border-emerald-500/40 text-emerald-900 dark:text-emerald-200',
+        error: 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-500/40 text-red-900 dark:text-red-200',
+        info: 'bg-white dark:bg-zinc-900 border-slate-300 dark:border-zinc-700 text-slate-800 dark:text-zinc-200'
+      };
+      toast.className = `px-4 py-2.5 rounded-xl border shadow-xl text-xs font-medium flex items-center gap-2 pointer-events-auto transition-all transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+      toast.innerHTML = `<span>${msg}</span>`;
+      elements.toastContainer.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => {
+          if (typeof toast.remove === 'function') {
+            toast.remove();
+          } else if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, 250);
+      }, 2500);
+    }
+
+    /**
+     * EVENT LISTENERS
+     */
+    function setupEventListeners() {
+      // Theme Toggle button
+      elements.themeToggleBtn.addEventListener('click', toggleTheme);
+
+      // Provider Select dropdown
+      elements.providerSelect.addEventListener('change', (e) => {
+        handleProviderChange(e.target.value);
+        showToast(`Provider switched to ${PROVIDER_CONFIGS[e.target.value]?.name || e.target.value}`, 'info');
+      });
+
+      // API Key input & storage
+      elements.apiKeyInput.addEventListener('input', (e) => {
+        state.apiKey = e.target.value.trim();
+        updateKeyStatusBadge(!!state.apiKey);
+        checkKeyFormat(state.apiKey);
+        if (elements.saveKeyCheckbox.checked) {
+          localStorage.setItem('llm_playground_api_key', state.apiKey);
+        }
+      });
+
+      elements.saveKeyCheckbox.addEventListener('change', (e) => {
+        if (e.target.checked && state.apiKey) {
+          localStorage.setItem('llm_playground_api_key', state.apiKey);
+          showToast('API key saved in local browser storage.', 'success');
+        } else {
+          localStorage.removeItem('llm_playground_api_key');
+          localStorage.removeItem('groq_playground_api_key');
+          showToast('API key removed from local storage.', 'info');
+        }
+      });
+
+      elements.clearKeyBtn.addEventListener('click', () => {
+        state.apiKey = '';
+        elements.apiKeyInput.value = '';
+        localStorage.removeItem('llm_playground_api_key');
+        localStorage.removeItem('groq_playground_api_key');
+        updateKeyStatusBadge(false);
+        checkKeyFormat('');
+        showToast('API key cleared.', 'info');
+      });
+
+      elements.toggleKeyVisibility.addEventListener('click', () => {
+        const isPass = elements.apiKeyInput.type === 'password';
+        elements.apiKeyInput.type = isPass ? 'text' : 'password';
+      });
+
+      // Model selector
+      elements.modelSelect.addEventListener('change', renderModelInfo);
+      elements.customModelInput.addEventListener('input', renderModelInfo);
+      elements.fetchModelsBtn.addEventListener('click', fetchAvailableModels);
+
+      // Temperature Slider
+      elements.tempSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value).toFixed(2);
+        elements.tempValueDisplay.textContent = val;
+        state.temperature = parseFloat(val);
+      });
+
+      // Max Tokens Slider
+      elements.maxTokensSlider.addEventListener('input', (e) => {
+        elements.maxTokensValueDisplay.textContent = e.target.value;
+        state.maxTokens = parseInt(e.target.value, 10);
+      });
+
+      // Max Tokens quick preset buttons
+      document.querySelectorAll('.max-token-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.getAttribute('data-val');
+          elements.maxTokensSlider.value = val;
+          elements.maxTokensValueDisplay.textContent = val;
+          state.maxTokens = parseInt(val, 10);
+        });
+      });
+
+      // Top P Slider
+      elements.topPSlider.addEventListener('input', (e) => {
+        elements.topPDisplay.textContent = parseFloat(e.target.value).toFixed(2);
+      });
+
+      // Stream Toggle
+      elements.streamToggle.addEventListener('click', () => {
+        state.stream = !state.stream;
+        elements.streamToggle.setAttribute('aria-checked', state.stream);
+        if (state.stream) {
+          elements.streamToggle.className = 'cursor-pointer w-8 h-4 rounded-full bg-orange-600 relative transition-colors focus:outline-none';
+          elements.streamThumb.className = 'w-3 h-3 rounded-full bg-white absolute top-0.5 right-0.5 transition-transform shadow';
+        } else {
+          elements.streamToggle.className = 'cursor-pointer w-8 h-4 rounded-full bg-slate-300 dark:bg-zinc-700 relative transition-colors focus:outline-none';
+          elements.streamThumb.className = 'w-3 h-3 rounded-full bg-white absolute top-0.5 left-0.5 transition-transform shadow';
+        }
+      });
+
+      // Web Search Grounding Toggle
+      elements.webSearchToggle.addEventListener('click', () => {
+        state.webSearch = !state.webSearch;
+        elements.webSearchToggle.setAttribute('aria-checked', state.webSearch);
+        if (state.webSearch) {
+          elements.webSearchToggle.className = 'cursor-pointer w-10 h-5 rounded-full bg-emerald-600 relative transition-colors focus:outline-none';
+          elements.webSearchThumb.className = 'w-4 h-4 rounded-full bg-white absolute top-0.5 right-0.5 transition-transform shadow';
+          elements.webSearchNotice.classList.remove('hidden');
+          elements.groundingActiveIndicator.classList.remove('hidden');
+          elements.groundingActiveIndicator.classList.add('flex');
+          showToast('Web Search Grounding active: tool payload attached.', 'success');
+        } else {
+          elements.webSearchToggle.className = 'cursor-pointer w-10 h-5 rounded-full bg-slate-300 dark:bg-zinc-700 relative transition-colors focus:outline-none';
+          elements.webSearchThumb.className = 'w-4 h-4 rounded-full bg-white absolute top-0.5 left-0.5 transition-transform shadow';
+          elements.webSearchNotice.classList.add('hidden');
+          elements.groundingActiveIndicator.classList.add('hidden');
+          elements.groundingActiveIndicator.classList.remove('flex');
+        }
+      });
+
+      // Prompt Analyzer trigger
+      elements.analyzePromptBtn.addEventListener('click', () => {
+        analyzePromptStructure();
+        showToast(`Analyzed: ${state.currentAnalysis.shotType} detected (${state.currentAnalysis.count} examples).`, 'info');
+      });
+
+      // Auto-analyze on input
+      elements.userPrompt.addEventListener('input', () => {
+        updateTokenEstimates();
+        if (elements.autoAnalyzeCheckbox.checked) {
+          analyzePromptStructure();
+        }
+      });
+
+      elements.systemPrompt.addEventListener('input', () => {
+        updateTokenEstimates();
+        if (elements.autoAnalyzeCheckbox.checked) {
+          analyzePromptStructure();
+        }
+      });
+
+      // Inject Menu Dropdown
+      elements.injectExampleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        elements.injectMenu.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (e && e.target && elements.injectMenu && elements.injectMenu.contains && !elements.injectMenu.contains(e.target) && e.target !== elements.injectExampleBtn) {
+          elements.injectMenu.classList.add('hidden');
+        }
+      });
+
+      document.querySelectorAll('.inject-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const templateKey = btn.getAttribute('data-template');
+          injectTemplate(templateKey);
+        });
+      });
+
+      // Toggle Analysis Details
+      elements.toggleAnalysisDetailsBtn.addEventListener('click', () => {
+        const isHidden = elements.analysisDetailsPanel.classList.contains('hidden');
+        if (isHidden) {
+          elements.analysisDetailsPanel.classList.remove('hidden');
+          elements.detailsToggleLabel.textContent = 'Hide Details';
+          elements.detailsChevron.style.transform = 'rotate(180deg)';
+        } else {
+          elements.analysisDetailsPanel.classList.add('hidden');
+          elements.detailsToggleLabel.textContent = 'Show Analysis Details';
+          elements.detailsChevron.style.transform = 'rotate(0deg)';
+        }
+      });
+
+      // System Prompt Presets
+      elements.systemPresetSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (SYSTEM_PRESETS[val] !== undefined) {
+          elements.systemPrompt.value = SYSTEM_PRESETS[val];
+          autoResize(elements.systemPrompt);
+          updateTokenEstimates();
+          if (elements.autoAnalyzeCheckbox.checked) analyzePromptStructure();
+        }
+      });
+
+      elements.clearSystemPrompt.addEventListener('click', () => {
+        elements.systemPrompt.value = '';
+        autoResize(elements.systemPrompt);
+        updateTokenEstimates();
+        if (elements.autoAnalyzeCheckbox.checked) analyzePromptStructure();
+      });
+
+      elements.clearUserPrompt.addEventListener('click', () => {
+        elements.userPrompt.value = '';
+        autoResize(elements.userPrompt);
+        updateTokenEstimates();
+        if (elements.autoAnalyzeCheckbox.checked) analyzePromptStructure();
+      });
+
+      // Sample prompt chips
+      document.querySelectorAll('.sample-prompt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const sampleKey = btn.getAttribute('data-sample');
+          if (USER_PROMPT_SAMPLES[sampleKey]) {
+            elements.userPrompt.value = USER_PROMPT_SAMPLES[sampleKey];
+            autoResize(elements.userPrompt);
+            updateTokenEstimates();
+            analyzePromptStructure();
+            showToast(`Loaded "${sampleKey}" sample prompt`, 'info');
+          }
+        });
+      });
+
+      // Submit Actions
+      elements.submitBtn.addEventListener('click', submitPrompt);
+
+      elements.stopBtn.addEventListener('click', () => {
+        if (state.abortController) {
+          state.abortController.abort();
+        }
+        setGeneratingState(false);
+      });
+
+      // Keyboard Shortcut: Cmd/Ctrl + Enter to run
+      window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          e.preventDefault();
+          submitPrompt();
+        }
+      });
+
+      // Response View Tabs (Rendered vs Raw JSON)
+      elements.viewRenderedTab.addEventListener('click', () => {
+        state.activeViewTab = 'rendered';
+        elements.viewRenderedTab.className = 'cursor-pointer px-2 py-1 rounded bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-200 font-semibold shadow-sm transition';
+        elements.viewRawTab.className = 'cursor-pointer px-2 py-1 rounded text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 transition';
+        elements.responseContent.classList.remove('hidden');
+        elements.responseRawJson.classList.add('hidden');
+      });
+
+      elements.viewRawTab.addEventListener('click', () => {
+        state.activeViewTab = 'raw';
+        elements.viewRawTab.className = 'cursor-pointer px-2 py-1 rounded bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-200 font-semibold shadow-sm transition';
+        elements.viewRenderedTab.className = 'cursor-pointer px-2 py-1 rounded text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 transition';
+        elements.responseContent.classList.add('hidden');
+        elements.responseRawJson.classList.remove('hidden');
+      });
+
+      // Copy response
+      elements.copyResponseBtn.addEventListener('click', () => {
+        const text = state.lastRawResponse?.choices?.[0]?.message?.content 
+                  || state.lastRawResponse?.content 
+                  || elements.responseContent.innerText;
+        if (!text) {
+          showToast('No content to copy.', 'info');
+          return;
+        }
+        navigator.clipboard.writeText(text);
+        showToast('Copied full response to clipboard!', 'success');
+      });
+
+      // Demo Mode Toggle
+      elements.demoModeToggle.addEventListener('click', toggleDemoMode);
+      elements.exitDemoBtn.addEventListener('click', toggleDemoMode);
+
+      function toggleDemoMode() {
+        state.demoMode = !state.demoMode;
+        elements.demoModeToggle.setAttribute('aria-checked', state.demoMode);
+        if (state.demoMode) {
+          elements.demoModeToggle.className = 'cursor-pointer w-8 h-4 rounded-full bg-orange-600 relative transition-colors focus:outline-none';
+          elements.demoModeThumb.className = 'w-3 h-3 rounded-full bg-white absolute top-0.5 right-0.5 transition-transform shadow';
+          elements.demoModeBanner.classList.remove('hidden');
+          elements.demoModeBanner.classList.add('flex');
+          showToast('Demo Mode enabled: Test prompt streaming without an API key!', 'success');
+        } else {
+          elements.demoModeToggle.className = 'cursor-pointer w-8 h-4 rounded-full bg-slate-300 dark:bg-zinc-700 relative transition-colors focus:outline-none';
+          elements.demoModeThumb.className = 'w-3 h-3 rounded-full bg-white absolute top-0.5 left-0.5 transition-transform shadow';
+          elements.demoModeBanner.classList.add('hidden');
+          elements.demoModeBanner.classList.remove('flex');
+          showToast('Demo Mode disabled.', 'info');
+        }
+      }
+
+      // Reset Session
+      elements.resetSessionBtn.addEventListener('click', () => {
+        if (confirm('Reset prompts and response back to default?')) {
+          elements.systemPrompt.value = SYSTEM_PRESETS.default;
+          elements.userPrompt.value = USER_PROMPT_SAMPLES.sentiment;
+          autoResize(elements.systemPrompt);
+          autoResize(elements.userPrompt);
+          elements.responseContent.innerHTML = '';
+          elements.responseEmptyState.classList.remove('hidden');
+          elements.responseContent.classList.add('hidden');
+          elements.responseRawJson.classList.add('hidden');
+          elements.responseErrorState.classList.add('hidden');
+          elements.responseLoadingState.classList.add('hidden');
+          elements.statusIndicator.textContent = 'Idle';
+          elements.statusIndicator.className = 'text-[11px] font-mono text-slate-600 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-900 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-800';
+          elements.latencyStat.textContent = '-- ms';
+          elements.speedStat.textContent = '-- tok/s';
+          elements.tokenStat.textContent = '--';
+          updateTokenEstimates();
+          analyzePromptStructure();
+          showToast('LLM Playground reset.', 'info');
+        }
+      });
+
+      // View Payload / cURL Modal
+      let modalActiveTab = 'json';
+
+      function updateModalContent() {
+        const payload = buildPayload();
+        if (modalActiveTab === 'json') {
+          elements.modalPayloadContent.textContent = JSON.stringify(payload, null, 2);
+        } else {
+          elements.modalPayloadContent.textContent = buildCurlCommand(payload);
+        }
+      }
+
+      elements.viewPayloadBtn.addEventListener('click', () => {
+        updateModalContent();
+        elements.payloadModal.classList.remove('hidden');
+      });
+
+      elements.closePayloadModal.addEventListener('click', () => {
+        elements.payloadModal.classList.add('hidden');
+      });
+
+      elements.modalTabJson.addEventListener('click', () => {
+        modalActiveTab = 'json';
+        elements.modalTabJson.className = 'cursor-pointer px-2 py-0.5 rounded bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-200 font-semibold shadow-sm';
+        elements.modalTabCurl.className = 'cursor-pointer px-2 py-0.5 rounded text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 font-medium';
+        updateModalContent();
+      });
+
+      elements.modalTabCurl.addEventListener('click', () => {
+        modalActiveTab = 'curl';
+        elements.modalTabCurl.className = 'cursor-pointer px-2 py-0.5 rounded bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-200 font-semibold shadow-sm';
+        elements.modalTabJson.className = 'cursor-pointer px-2 py-0.5 rounded text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 font-medium';
+        updateModalContent();
+      });
+
+      elements.copyModalPayloadBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(elements.modalPayloadContent.textContent);
+        showToast('Copied to clipboard!', 'success');
+      });
+
+      // Mobile Sidebar Toggle
+      elements.sidebarToggleBtn.addEventListener('click', () => {
+        elements.configSidebar.classList.remove('translate-x-full');
+      });
+
+      elements.closeSidebarBtn.addEventListener('click', () => {
+        elements.configSidebar.classList.add('translate-x-full');
+      });
+
+      // Reset Endpoint
+      elements.resetEndpointBtn.addEventListener('click', () => {
+        const defaultUrl = PROVIDER_CONFIGS[state.provider]?.baseUrl || 'https://api.groq.com/openai/v1/chat/completions';
+        elements.baseUrlInput.value = defaultUrl;
+        state.baseUrl = defaultUrl;
+        showToast('Endpoint reset to default completions URL', 'info');
+      });
+    }
+
+    // Run init on DOM load
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
